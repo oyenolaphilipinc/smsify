@@ -156,7 +156,7 @@ export default function DashboardPage() {
                     <span className="text-gray-500">{country.id}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="font-semibold">{country.price} $</span>
+                    <span className="md:font-semibold text-sm md:text-md">{country.price} $</span>
                     <FlutterWaveButton
                       public_key = {"FLWPUBK_TEST-0f4764dff4e84759438ba6595737afe7-X"} // Replace with your key
                       tx_ref = {`tx-${Date.now()}`}
@@ -174,6 +174,7 @@ export default function DashboardPage() {
                         logo: '/flutter.png', // Optional
                       }}
                       text="Pay Now"
+                      className="text-sm border px-2 py-1 bg-blue-500 text-white"
                       callback={handleSuccess}
                       onClose={handleClose}
                     />
