@@ -42,7 +42,7 @@ export default function DashboardPage() {
     payment_options: 'card, mobilemoney, ussd',
     customer: {
       email: user?.email, // Replace with user's email
-      phonenumber: '08012345678', // Optional
+      phone_number: '08012345678', // Optional
       name: user?.displayName, // Replace with user's name
     },
     customizations: {
