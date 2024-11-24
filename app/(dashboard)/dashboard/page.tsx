@@ -164,9 +164,9 @@ export default function DashboardPage() {
                       currency = {'NGN'}
                       payment_options = {'card, mobilemoney, ussd'}
                       customer = {{
-                        email: user?.email, // Replace with user's email
+                        email: `${user?.email}`, // Replace with user's email
                         phone_number: '08012345678', // Optional
-                        name: user?.displayName, // Replace with user's name
+                        name: `${user?.displayName}`, // Replace with user's name
                       }}
                       customizations = {{
                         title: 'My Payment Title',
