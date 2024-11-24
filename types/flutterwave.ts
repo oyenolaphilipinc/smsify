@@ -1,5 +1,5 @@
 export interface FlutterwaveConfig {
-    public_key: string;
+    public_key: string | undefined;
     tx_ref: string;
     amount: number;
     currency: string;
