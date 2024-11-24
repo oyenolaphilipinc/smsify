@@ -5,9 +5,9 @@ export interface FlutterwaveConfig {
     currency: string;
     payment_options: string;
     customer: {
-      email: string | null | undefined;
+      email: string;
       phone_number: string;
-      name: string | null | undefined;
+      name: string;
     };
     customizations: {
       title: string;

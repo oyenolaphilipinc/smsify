@@ -10,7 +10,6 @@ import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useFlutterwave, closePaymentModal } from 'flutterwave-react-v3';
-import type { FlutterwaveConfig } from '@/types/flutterwave'
 
 const services = [
   { id: '2336041', name: 'VKontakte', icon: '/vk.png' },
@@ -34,7 +33,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
-  const config: FlutterwaveConfig = {
+  const config = {
     public_key: "FLWPUBK_TEST-0f4764dff4e84759438ba6595737afe7-X", // Replace with your key
     tx_ref: `tx-${Date.now()}`,
     amount: 5000, // Replace with the actual amount
