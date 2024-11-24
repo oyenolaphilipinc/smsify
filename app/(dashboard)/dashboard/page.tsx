@@ -9,7 +9,7 @@ import { db } from '@/lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { useFlutterwave, closePaymentModal } from 'flutterwave-react-v3';
+import { useFlutterwave, closePaymentModal, FlutterWaveButton } from 'flutterwave-react-v3';
 import type { FlutterwaveConfig } from '@/types/flutterwave'
 
 const services = [
@@ -96,8 +96,6 @@ export default function DashboardPage() {
     console.log('Payment modal closed');
   };
 
-  const handleFlutterPayment = useFlutterwave(config);
-
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       <h1 className="text-2xl font-bold">New SMS</h1>
@@ -159,17 +157,12 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="font-semibold">{country.price} $</span>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        handleFlutterPayment({
-                          callback: handleSuccess,
-                          onClose: handleClose,
-                        });
-                      }}
-                    >
-                      Buy SMS
-                    </Button>
+                    <FlutterWaveButton
+                      config={config}
+                      text="Pay Now"
+                      callback={handleSuccess}
+                      onClose={handleClose}
+                    />
                   </div>
                 </div>
               ))}
