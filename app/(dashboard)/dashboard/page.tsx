@@ -35,7 +35,7 @@ export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
 
   const config: FlutterwaveConfig = {
-    public_key: process.env.NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY, // Replace with your key
+    public_key: "FLWPUBK_TEST-0f4764dff4e84759438ba6595737afe7-X", // Replace with your key
     tx_ref: `tx-${Date.now()}`,
     amount: 5000, // Replace with the actual amount
     currency: 'NGN',
