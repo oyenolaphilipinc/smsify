@@ -158,7 +158,21 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-3">
                     <span className="font-semibold">{country.price} $</span>
                     <FlutterWaveButton
-                      config={config}
+                      public_key = {"FLWPUBK_TEST-0f4764dff4e84759438ba6595737afe7-X"} // Replace with your key
+                      tx_ref = {`tx-${Date.now()}`}
+                      amount = {5000} // Replace with the actual amount
+                      currency = {'NGN'}
+                      payment_options = {'card, mobilemoney, ussd'}
+                      customer = {{
+                        email: user?.email, // Replace with user's email
+                        phone_number: '08012345678', // Optional
+                        name: user?.displayName, // Replace with user's name
+                      }}
+                      customizations = {{
+                        title: 'My Payment Title',
+                        description: 'Payment for items in cart',
+                        logo: '/flutter.png', // Optional
+                      }}
                       text="Pay Now"
                       callback={handleSuccess}
                       onClose={handleClose}
