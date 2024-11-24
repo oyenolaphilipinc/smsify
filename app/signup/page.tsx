@@ -61,7 +61,7 @@ export default function SignupPage() {
           </div>
         </div>
         {/* Form Section - Full width on mobile, half width on desktop */}
-        <div className="w-full md:w-1/2 flex items-center justify-center p-4 bg-white">
+        <div className="w-full md:w-1/2 flex items-center justify-center p-4 bg-white pt-16 md:pt-0">
           <Card className="w-full max-w-md">
             <CardContent className="p-6">
               <CardHeader className="p-0 mb-6">
