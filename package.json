@@ -59,6 +59,8 @@
     "@radix-ui/react-navigation-menu": "^1.1.4",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-toast": "^1.2.2",
+    "axios": "^1.7.7",
+    "react-spinners": "^0.14.1",
     "class-variance-authority": "^0.7.0",
     "react-day-picker": "8.10.0",
     "recharts": "2.13.3",
