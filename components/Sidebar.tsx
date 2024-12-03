@@ -15,7 +15,7 @@ const navigation = [
 
 export function Sidebar() {
   return (
-    <div className="inset-y-0 left-0 z-50 w-12 bg-[#e3f0ff] lg:w-64">
+    <div className="fixed inset-y-0 left-0 z-50 w-12 bg-[#e3f0ff] lg:w-64">
       <div className="flex h-full flex-col">
         <div className="flex h-16 items-center justify-center px-4 lg:justify-start">
           <Link href="/dashboard" className="flex items-center space-x-2">
@@ -29,21 +29,21 @@ export function Sidebar() {
               href={item.href}
               className="group flex items-center justify-center rounded-lg px-2 py-2 text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-600 lg:justify-start lg:px-3"
             >
-              <item.icon className="h-6 w-6 text-[#088aff] lg:mr-3 lg:h-5 lg:w-5" />
+              <item.icon className="h-7 w-7 text-[#088aff] lg:mr-3 lg:h-5 lg:w-5" />
               <span className="hidden lg:inline">{item.name}</span>
             </Link>
           ))}
         </nav>
-        <div className="border-t p-4">
+        <div className="border-t md:p-4">
           <Link
             href="/help"
             className="group flex items-center justify-center rounded-lg px-2 py-2 text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-600 lg:justify-start lg:px-3"
           >
-            <HelpCircle className="h-6 w-6 lg:mr-3 lg:h-5 lg:w-5" />
+            <HelpCircle className="text-[#088aff] h-7 w-7 lg:mr-3 lg:h-5 lg:w-5" />
             <span className="hidden lg:inline">Help</span>
           </Link>
           <button className="group flex w-full items-center justify-center rounded-lg px-2 py-2 text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-600 lg:justify-start lg:px-3">
-            <LogOut className="h-6 w-6 lg:mr-3 lg:h-5 lg:w-5" />
+            <LogOut className="text-[#088aff] h-6 w-6 lg:mr-3 lg:h-5 lg:w-5" />
             <span className="hidden lg:inline">Log out</span>
           </button>
         </div>
