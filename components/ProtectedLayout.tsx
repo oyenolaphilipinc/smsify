@@ -35,7 +35,7 @@ export default function ProtectedLayout({
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
-      <main className="flex-1 p-4 md:ml-64">{children}</main>
+      <main className="flex-1 p-4 ml-10 md:ml-64">{children}</main>
     </div>
   );
 }
