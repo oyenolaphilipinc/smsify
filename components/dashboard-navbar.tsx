@@ -12,9 +12,9 @@ import {
 
 export default function Navbar() {
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-white px-4 md:px-6">
+    <header className="flex h-16 items-center justify-between border-b px-4 md:px-6">
       <div className="flex flex-1 items-center justify-center gap-4 md:justify-start md:px-4">
-        <div className="relative flex w-full max-w-lg items-center overflow-hidden rounded-lg border bg-white shadow-sm md:w-auto md:min-w-[400px]">
+        <div className="relative flex w-full max-w-lg items-center overflow-hidden rounded-lg border shadow-sm md:w-auto md:min-w-[400px]">
           <div className="hidden md:flex h-full items-center gap-2 border-r px-3 py-2">
             <Send className="h-5 w-5 text-blue-500" />
             <div className="flex flex-col">
@@ -25,7 +25,7 @@ export default function Navbar() {
         </div>
       </div>
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2">
+        <div className="flex items-center gap-2 rounded-lg border px-2 md:px-3 py-2">
           <span className="text-sm text-muted-foreground">Balance:</span>
           <span className="font-medium">0 ₦</span>
         </div>
