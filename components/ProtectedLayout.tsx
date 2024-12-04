@@ -3,6 +3,7 @@
 import { useAuth } from '../hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
+import Navbar from './dashboard-navbar'
 import { useEffect } from 'react';
 import { ClipLoader } from 'react-spinners';
 
@@ -35,7 +36,10 @@ export default function ProtectedLayout({
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
-      <main className="flex-1 p-4 ml-10 md:ml-64">{children}</main>
+      <main className="flex-1 p-4 ml-10 md:ml-64">
+        <Navbar />
+        {children}
+      </main>
     </div>
   );
 }
