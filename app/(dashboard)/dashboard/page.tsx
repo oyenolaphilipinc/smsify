@@ -98,7 +98,7 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      <h1 className="text-2xl font-bold">New SMS</h1>
+      <h1 className="text-2xl font-bold ml-4">New SMS</h1>
 
       <div className="bg-white rounded-xl p-6 shadow-sm">
         <div className="space-y-6">

@@ -34,10 +34,10 @@ export default function ProtectedLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className='flex justify-between'>
       <Sidebar />
-      <main className="flex-1 p-4 ml-10 md:ml-64">
-        <Navbar />
+      <main className="flex-1 md:ml-60">
+          <Navbar />
         {children}
       </main>
     </div>
