@@ -112,7 +112,7 @@ export default function SMSVerificationForm() {
 
           {result && (
             <div className="mt-4 space-y-4">
-              <Alert variant={result.sms_code ? 'default' : 'warning'}>
+              <Alert variant={result.sms_code ? 'default' : 'destructive'}>
                 <CheckCircle2 className="h-4 w-4" />
                 <AlertDescription>
                   Status: {result.sms_status}
