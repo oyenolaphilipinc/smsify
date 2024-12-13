@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import {
   Select,
   SelectContent,
@@ -55,6 +55,9 @@ const countries = [
   // Add more countries as needed
 ]
 
+const STORAGE_KEY = 'activationsData'
+const EXPIRATION_TIME = 20 * 60 * 1000 // 20 minutes in milliseconds
+
 export default function ProtectedContent() {
   const router = useRouter()
   const [serviceId, setServiceId] = useState<string>('')
@@ -66,6 +69,33 @@ export default function ProtectedContent() {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [authorized, setAuthorized] = useState(false)
+
+  const saveActivationsToLocalStorage = useCallback((activations: Activation[]) => {
+    const data = {
+      activations,
+      timestamp: Date.now()
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  }, [])
+
+  const loadActivationsFromLocalStorage = useCallback(() => {
+    const storedData = localStorage.getItem(STORAGE_KEY)
+    if (storedData) {
+      const { activations, timestamp } = JSON.parse(storedData)
+      const now = Date.now()
+      if (now - timestamp < EXPIRATION_TIME) {
+        setActivations(activations)
+        // Set a timer to clear the data when it expires
+        setTimeout(() => {
+          localStorage.removeItem(STORAGE_KEY)
+          setActivations([])
+        }, EXPIRATION_TIME - (now - timestamp))
+      } else {
+        // Data has expired, clear it
+        localStorage.removeItem(STORAGE_KEY)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     const verifyPayment = async (userId: string) => {
@@ -89,6 +119,7 @@ export default function ProtectedContent() {
         const hasValidPayment = await verifyPayment(user.uid)
         if (hasValidPayment) {
           setAuthorized(true)
+          loadActivationsFromLocalStorage()
         } else {
           router.push('/dashboard')
         }
@@ -99,7 +130,7 @@ export default function ProtectedContent() {
     })
 
     return () => unsubscribe()
-  }, [router])
+  }, [router, loadActivationsFromLocalStorage])
 
   const handleOrder = async () => {
     if (!serviceId || !countryId) {
@@ -140,7 +171,9 @@ export default function ProtectedContent() {
       }
 
       // Add the new activation to the beginning of the list
-      setActivations(prev => [newActivation, ...prev])
+      const updatedActivations = [newActivation, ...activations]
+      setActivations(updatedActivations)
+      saveActivationsToLocalStorage(updatedActivations)
 
       toast({
         title: "Success",
@@ -156,6 +189,16 @@ export default function ProtectedContent() {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    // Set up a timer to clear the data after 20 minutes
+    const timer = setTimeout(() => {
+      localStorage.removeItem(STORAGE_KEY)
+      setActivations([])
+    }, EXPIRATION_TIME)
+
+    return () => clearTimeout(timer)
+  }, [])
 
   if (loading) {
     return (

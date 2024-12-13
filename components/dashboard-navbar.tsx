@@ -12,7 +12,7 @@ import {
 
 export default function Navbar() {
   return (
-    <header className="md:flex ml-8 mt-4 md:ml-0 md:mt-0 h-16 items-center justify-between bg-white border-b px-4 md:px-6">
+    <header className="fixed w-full md:flex ml-8 md:ml-0 md:mt-0 h-16 items-center justify-between bg-white border-b px-4 md:px-6">
       <div className="flex flex-1 items-center justify-center gap-4 md:justify-start md:px-4">
         <div className="relative flex w-full max-w-lg items-center overflow-hidden rounded-lg border bg-white shadow-sm md:w-auto md:min-w-[400px]">
           <div className="hidden md:flex h-full items-center gap-2 border-r px-3 py-2">

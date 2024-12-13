@@ -6,14 +6,13 @@ import { Mail, Smartphone, Shield, User, CreditCard, ThumbsUp, BookOpen, Network
 import { Button } from '@/components/ui/button'
 
 const navigation = [
-  { name: 'Receive SMS', icon: Mail, href: '/dashboard' },
-  { name: 'Rent', icon: Smartphone, href: '/rent' },
-  { name: 'Proxy', icon: Shield, href: '/proxy' },
+  { name: 'Dashboard', icon: Mail, href: '/dashboard' },
+  { name: 'Receive Number', icon: Smartphone, href: '/numbers' },
+  { name: 'Receive SMS', icon: Shield, href: '/sms' },
   { name: 'Profile', icon: User, href: '/profile' },
   { name: 'Top up your balance', icon: CreditCard, href: '/top-up' },
   { name: 'Earn money on SMS', icon: ThumbsUp, href: '/earn' },
   { name: 'Instructions', icon: BookOpen, href: '/instructions' },
-  { name: 'API connection', icon: Network, href: '/api' },
   { name: 'Feedback', icon: MessageSquare, href: '/feedback' },
 ]
 
@@ -43,7 +42,7 @@ export function Sidebar() {
         <Button
           variant="ghost"
           size="icon"
-          className={`fixed top-4 z-50 transition-all duration-300 ${
+          className={`fixed bg-white top-1 z-50 transition-all duration-300 ${
             isOpen ? 'left-[200px]' : 'left-2'
           }`}
           onClick={toggleSidebar}
