@@ -224,7 +224,7 @@ export default function ProtectedContent() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100">
       <div className="md:flex md:justify-center mb-8 pt-8">
-        <div className="w-80 mx-auto md:w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
+        <div className="mt-6 md:mt-0 w-80 mx-auto md:w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
           <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">
             SMS Order System
           </h1>
