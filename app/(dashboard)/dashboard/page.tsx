@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -9,15 +9,20 @@ import { db } from '@/lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { useFlutterwave, closePaymentModal, FlutterWaveButton } from 'flutterwave-react-v3';
-import type { FlutterwaveConfig } from '@/types/flutterwave'
+import { FlutterWaveButton } from 'flutterwave-react-v3';
+import { getCountries, getServices } from '../sms/api'
+import Image from 'next/image';
 
-const services = [
-  { id: '2336041', name: 'VKontakte', icon: '/vk.png' },
-  { id: '2710443', name: 'WeChat', icon: '/wechat.png' },
-  { id: '1480932', name: 'Telegram', icon: '/telegram.png' },
-  { id: '1208117', name: 'OK', icon: '/ok.png' },
-];
+interface Service {
+  service_id: string
+  name: string
+  icon: string
+}
+
+interface Country {
+  country_id: string,
+  name: string
+}
 
 const countries = [
   { id: '3388', name: 'Kazakhstan', code: 'KZ', price: 0.19 },
@@ -28,73 +33,75 @@ const countries = [
 
 export default function DashboardPage() {
   const [serviceSearch, setServiceSearch] = useState('');
+  const [services, setServices] = useState<Service[]>([])
+  const [countries, setCountries] = useState<Country[]>([])
+  const [showAllServices, setShowAllServices] = useState(false)
+  const [showAllCountries, setShowAllCountries] = useState(false)
   const [countrySearch, setCountrySearch] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
-  const config: FlutterwaveConfig = {
-    public_key: "FLWPUBK_TEST-0f4764dff4e84759438ba6595737afe7-X", // Replace with your key
-    tx_ref: `tx-${Date.now()}`,
-    amount: 5000, // Replace with the actual amount
-    currency: 'NGN',
-    payment_options: 'card, mobilemoney, ussd',
-    customer: {
-      email: user?.email, // Replace with user's email
-      phone_number: '08012345678', // Optional
-      name: user?.displayName, // Replace with user's name
-    },
-    customizations: {
-      title: 'My Payment Title',
-      description: 'Payment for items in cart',
-      logo: '/flutter.png', // Optional
-    },
-  };
-
-  const handleSuccess = async (response: any) => {
-    console.log('Payment successful:', response);
-
-    try {
-      // Ensure we're using string values for Firestore document ID
-      const transactionId = String(response.transaction_id);
-
-      // Create a properly structured payment object
-      const paymentData = {
-        transactionId: transactionId,
-        status: response.status,
-        amount: Number(response.amount),
-        customer: {
-          email: user?.email || '',
-          uid: user?.uid || '',
-          name: user?.displayName || '',
-        },
-        createdAt: new Date().toISOString(),
-      };
-
-      // Save payment details to Firestore
-      await setDoc(doc(db, 'payments', transactionId), paymentData);
-
-      toast({
-        title: 'Payment Successful',
-        description: `Transaction ID: ${transactionId}`,
-      });
-
-      // Redirect to the protected page
-      router.push('/numbers');
-    } catch (error) {
-      console.error('Error saving payment to Firestore:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to save payment details. Please contact support.',
-        variant: 'destructive',
-      });
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        setLoading(true)
+        const data = await getServices()
+        setServices(data)
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch services. Please try again later.',
+          variant: 'destructive',
+        })
+      } finally {
+        setLoading(false)
+      }
     }
-  };
 
-  const handleClose = () => {
-    console.log('Payment modal closed');
-  };
+    fetchServices()
+  }, [])
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        setLoading(true)
+        const data = await getCountries()
+        setCountries(data)
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch services. Please try again later.',
+          variant: 'destructive',
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCountries()
+  }, [])
+
+  const filteredServices = services.filter(service => 
+    service.name.toLowerCase().includes(serviceSearch.toLowerCase())
+  )
+
+  const displayedServices = showAllServices 
+    ? filteredServices 
+    : filteredServices.slice(0, 4)
+
+  const remainingServicesCount = filteredServices.length - 4
+
+  const filteredCountries = countries.filter(country => 
+    country.name.toLowerCase().includes(countrySearch.toLowerCase())
+  )
+
+  const displayedCountries = showAllCountries
+    ? filteredCountries 
+    : filteredCountries.slice(0, 4)
+
+  const remainingCountriesCount = filteredCountries.length - 4
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
@@ -116,20 +123,34 @@ export default function DashboardPage() {
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {services.map((service) => (
+              {displayedServices.map((service) => (
                 <div
-                  key={service.id}
+                  key={service.service_id}
                   className="flex items-center justify-between p-4 rounded-lg bg-blue-50 hover:bg-blue-100 cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 bg-gray-200 rounded-full" />
+                    <Image src={service.icon || '/placeholder.png'} alt='Hello' width={30} height={30} />
                     <span>{service.name}</span>
                   </div>
-                  <span className="text-gray-500">{service.id}</span>
+                  <span className="text-gray-500">{service.service_id}</span>
                 </div>
               ))}
             </div>
           </div>
+          {remainingServicesCount > 0 && (
+              <Button
+                variant="ghost"
+                className="w-full mt-4 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                onClick={() => setShowAllServices(!showAllServices)}
+              >
+                {showAllServices ? (
+                  <ChevronUp className="h-4 w-4 mr-2" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 mr-2" />
+                )}
+                Available services - {filteredServices.length}
+              </Button>
+            )}
 
           <div>
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -145,44 +166,36 @@ export default function DashboardPage() {
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {countries.map((country) => (
+              {displayedCountries.map((country) => (
                 <div
-                  key={country.id}
+                  key={country.country_id}
                   className="flex items-center justify-between p-4 rounded-lg bg-blue-50 hover:bg-blue-100"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-6 h-6 bg-gray-200 rounded-full" />
                     <span className="text-sm md:text-md">{country.name}</span>
-                    <span className="text-gray-500 hidden md:flex">{country.id}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="md:font-semibold text-sm md:text-md hidden md:flex">{country.price} N</span>
-                    <FlutterWaveButton
-                      public_key = {"FLWPUBK_TEST-0f4764dff4e84759438ba6595737afe7-X"} // Replace with your key
-                      tx_ref = {`tx-${Date.now()}`}
-                      amount = {5000} // Replace with the actual amount
-                      currency = {'NGN'}
-                      payment_options = {'card, mobilemoney, ussd'}
-                      customer = {{
-                        email: `${user?.email}`, // Replace with user's email
-                        phone_number: '08012345678', // Optional
-                        name: `${user?.displayName}`, // Replace with user's name
-                      }}
-                      customizations = {{
-                        title: 'My Payment Title',
-                        description: 'Payment for items in cart',
-                        logo: '/flutter.png', // Optional
-                      }}
-                      text="Pay Now"
-                      className="text-sm border px-2 py-1 bg-blue-500 text-white rounded-md"
-                      callback={handleSuccess}
-                      onClose={handleClose}
-                    />
+                    <span className="text-gray-500 hidden md:flex">{country.country_id}</span>
                   </div>
                 </div>
               ))}
             </div>
           </div>
+
+          {remainingCountriesCount > 0 && (
+              <Button
+                variant="ghost"
+                className="w-full mt-4 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                onClick={() => setShowAllCountries(!showAllCountries)}
+              >
+                {showAllCountries ? (
+                  <ChevronUp className="h-4 w-4 mr-2" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 mr-2" />
+                )}
+                Available Countries - {filteredCountries.length}
+              </Button>
+            )}
+
 
           <div className="flex gap-4 pt-4">
             <label className="flex items-center gap-2">

@@ -36,9 +36,11 @@ export default function ProtectedLayout({
   return (
     <div className='flex justify-between'>
       <Sidebar />
-      <main className="flex-1 md:ml-60">
-          <Navbar />
-        {children}
+      <main className="flex-1">
+        <Navbar />
+        <div className='md:ml-60'>
+          {children}
+        </div>
       </main>
     </div>
   );

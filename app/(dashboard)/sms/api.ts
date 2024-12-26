@@ -58,3 +58,22 @@ export async function pollForSMS(activationId: string, onUpdate: (data: Activati
   poll()
 }
 
+export const getServices = async () => {
+  try {
+    const response = await api.get('/activation/services')
+    return response.data
+  } catch (error) {
+    console.error('Error fetching services:', error)
+    throw error
+  }
+}
+
+export const getCountries = async () => {
+  try {
+    const response = await api.get('/activation/countries')
+    return response.data
+  } catch (error) {
+    console.error('Error fetching services:', error)
+    throw error
+  }
+}
