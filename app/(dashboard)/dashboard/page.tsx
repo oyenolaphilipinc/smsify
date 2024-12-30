@@ -280,7 +280,7 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-3">
                     <div className="w-6 h-6 bg-gray-200 rounded-full" />
                     <span className="text-sm md:text-md">{country.name}</span>
-                    <span className="text-gray-500 hidden md:flex">{country.country_id}</span>
+                    <span className="text-gray-500 hidden md:flex uppercase">{country.country_id}</span>
                   </div>
                 </div>
               ))}
