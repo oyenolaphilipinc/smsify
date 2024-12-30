@@ -118,7 +118,7 @@ export default function Navbar() {
         <div className="ml-8 md:ml-0 flex items-center gap-4">
         {payments.map((payment) => (
             <div key={payment.transactionId} className="flex items-center gap-4 border px-4 py-2 border-yellow-500 rounded-md">
-                <div className="text-md flex flex-col mr-2 ml-2 text-gray-500">
+                <div className="text-sm md:text-md flex flex-col mr-2 ml-2 text-gray-500">
                     Balance:{" "}
                     <span className="text-black font-bold">$ {convertNaira(payment.amount).toLocaleString()}</span>
                 </div>
@@ -139,7 +139,7 @@ export default function Navbar() {
                         logo: '/flutter.png', // Optional
                       }}
                     text="Top Up"
-                    className="bg-[#ffc700] font-medium text-black hover:bg-[#ffc700]/90 px-4 py-2 rounded-md"
+                    className="bg-[#ffc700] font-medium text-sm md:text-md text-black hover:bg-[#ffc700]/90 px-2 md:px-4 py-2 rounded-md"
                     callback={handleSuccess}
                     onClose={handleClose}
                 />
