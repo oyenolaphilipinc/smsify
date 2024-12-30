@@ -3,7 +3,7 @@
 import { useAuth } from '../hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
-import Navbar from './dashboard-navbar'
+import Navbar from './naving'
 import { useEffect } from 'react';
 import { ClipLoader } from 'react-spinners';
 
@@ -37,7 +37,9 @@ export default function ProtectedLayout({
     <div className='flex justify-between'>
       <Sidebar />
       <main className="flex-1">
-        <Navbar />
+        <div className='md:ml-60'>
+          <Navbar />
+        </div>
         <div className='md:ml-60'>
           {children}
         </div>

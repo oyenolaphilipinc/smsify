@@ -52,10 +52,10 @@ export default function SignupPage() {
         <div className="hidden md:block md:w-1/2 bg-gray-100">
           <div className="relative h-full">
             <Image
-              src="/step2.svg?height=1080&width=1080"
+              src="/step2.svg"
               alt="Signup background"
-              layout="fill"
-              objectFit="cover"
+              width={1080}
+              height={1080}
               priority
             />
           </div>

@@ -51,10 +51,10 @@ export default function LoginPage() {
         <div className="hidden md:block md:w-1/2 bg-gray-100">
           <div className="relative h-full">
             <Image
-              src="/sms-web-form.svg?height=1080&width=1080"
+              src="/sms-web-form.svg"
               alt="Login background"
-              layout="fill"
-              objectFit="cover"
+              width={1080}
+              height={1080}
               priority
             />
           </div>

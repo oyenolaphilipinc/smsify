@@ -80,7 +80,7 @@ export default function Navbar() {
         </div>
       </div>
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 rounded-lg border px-4 md:px-3 py-2">
+        <div className="flex items-center gap-2 rounded-lg border px-4 md:px-3 py-2 bg-[#ffc700] font-medium text-black hover:bg-[#ffc700]/90">
           <span className="text-sm text-muted-foreground">Balance:</span>
           <span className="font-medium">0$</span>
         </div>
