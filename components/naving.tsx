@@ -28,32 +28,58 @@ export default function Navbar() {
   
     const handleSuccess = async (response: any) => {
       console.log('Payment successful:', response);
-  
+    
       try {
-        // Ensure we're using string values for Firestore document ID
         const transactionId = String(response.transaction_id);
-  
-        // Create a properly structured payment object
-        const paymentData = {
-          transactionId: transactionId,
-          status: response.status,
-          amount: Number(response.amount),
-          customer: {
-            email: user?.email || '',
-            uid: user?.uid || '',
-            name: user?.displayName || '',
-          },
-          createdAt: new Date().toISOString(),
-        };
-  
-        // Save payment details to Firestore
-        await setDoc(doc(db, 'payments', transactionId), paymentData);
-  
-        toast({
-          title: 'Payment Successful',
-          description: `Transaction ID: ${transactionId}`,
-        });
-  
+    
+        // Fetch the existing payment document for this user
+        const paymentsRef = collection(db, 'payments');
+        const q = query(paymentsRef, where('customer.email', '==', user?.email || ''));
+        const querySnapshot = await getDocs(q);
+    
+        let existingPayment = null;
+    
+        if (!querySnapshot.empty) {
+          existingPayment = querySnapshot.docs[0]; // Assuming only one document per user
+        }
+    
+        if (existingPayment) {
+          // Update the existing document with the new balance
+          const existingData = existingPayment.data() as PaymentData;
+          const newBalance = existingData.amount + Number(response.amount);
+    
+          await setDoc(doc(db, 'payments', existingPayment.id), {
+            ...existingData,
+            amount: newBalance,
+            updatedAt: new Date().toISOString(), // Optional: Track update time
+          });
+    
+          toast({
+            title: 'Balance Updated',
+            description: `New Balance: $${convertNaira(newBalance).toLocaleString()}`,
+          });
+        } else {
+          // Create a new payment document if none exists
+          const paymentData = {
+            transactionId,
+            status: response.status,
+            amount: Number(response.amount),
+            customer: {
+              email: user?.email || '',
+              uid: user?.uid || '',
+              name: user?.displayName || '',
+            },
+            createdAt: new Date().toISOString(),
+          };
+    
+          await setDoc(doc(db, 'payments', transactionId), paymentData);
+    
+          toast({
+            title: 'Payment Successful',
+            description: `Transaction ID: ${transactionId}`,
+          });
+        }
+    
         // Redirect to the protected page
         router.push('/numbers');
       } catch (error) {
@@ -65,6 +91,7 @@ export default function Navbar() {
         });
       }
     };
+    
   
     const handleClose = () => {
       console.log('Payment modal closed');
