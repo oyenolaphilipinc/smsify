@@ -6,6 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { PaymentData } from '@/types/payment';
+import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/useAuth';
 import Image from 'next/image';
 import axios from 'axios';
@@ -31,7 +34,9 @@ interface Country {
 }
 
 export default function DashboardPage() {
+  const [payments, setPayments] = useState<PaymentData[]>([])
   const [serviceSearch, setServiceSearch] = useState('');
+  const [balance, setBalance] = useState(0);
   const [services, setServices] = useState<Service[]>([]);
   const [countries, setCountries] = useState<Country[]>([]);
   const [showAllServices, setShowAllServices] = useState(false);
@@ -117,11 +122,69 @@ export default function DashboardPage() {
     setSelectedCountry(country);
   };
 
+  useEffect(() => {
+    async function fetchPayments() {
+      if (!user) return;
+
+      try {
+        const paymentsRef = collection(db, 'payments');
+        const q = query(paymentsRef, where('customer.email', '==', user.email));
+        const querySnapshot = await getDocs(q);
+
+        const paymentData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as PaymentData[];
+
+        setPayments(paymentData);
+
+        // Calculate total balance in cents
+        const totalBalanceCents = paymentData.reduce((acc, payment) => acc + payment.amount, 0);
+        setBalance(totalBalanceCents);
+      } catch (err) {
+        toast({
+          title: 'Error',
+          description: 'Error fetching payment data',
+          variant: 'destructive',
+        });
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (!authLoading) {
+      fetchPayments();
+    }
+  }, [user, authLoading]);
+
   const handleGetNumber = async () => {
     if (!selectedService || !selectedCountry) {
       toast({
         title: 'Error',
         description: 'Please select both a service and a country.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const serviceCostCents = 180;
+
+    if (balance <= 0) {
+      toast({
+        title: 'Insufficient Funds',
+        description: 'Your balance is 0. Please top up to proceed.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (balance < serviceCostCents) {
+      toast({
+        title: 'Insufficient Funds',
+        description: `Your balance is insufficient for this service. Please top up to cover the cost of $${(
+          serviceCostCents / 100
+        ).toFixed(2)}.`,
         variant: 'destructive',
       });
       return;
@@ -134,12 +197,12 @@ export default function DashboardPage() {
         {
           service_id: selectedService.service_id,
           country_id: selectedCountry.country_id,
-          max_price: 90,
-          quality_factor: 10
+          max_price: serviceCostCents,
+          quality_factor: 10,
         },
         {
           headers: {
-            "X-Api-Key": "13586878e3944331a7158fbe936c6d41"
+            'X-Api-Key': '13586878e3944331a7158fbe936c6d41',
           }
         }
       );
@@ -169,14 +232,50 @@ export default function DashboardPage() {
   };
 
   const handleGetSMS = async () => {
+    if (!user || !selectedService || !selectedCountry) return;
+  
     try {
       setLoading(true);
       await pollForSMS(
         activationId,
-        (data) => {
+        async (data) => {
           if (data.sms_code && data.sms_text) {
             setSmsCode(data.sms_code);
             setSmsText(data.sms_text);
+  
+            // Deduct the service cost from the balance
+            const serviceCostCents = 1530; // Replace with the actual cost
+            const paymentDoc = payments.find((payment) => payment.amount >= serviceCostCents); // Find the document with sufficient balance
+  
+            if (paymentDoc) {
+              const paymentDocRef = doc(db, 'payments', paymentDoc.id);
+  
+              // Update the amount field
+              await updateDoc(paymentDocRef, {
+                amount: paymentDoc.amount - serviceCostCents,
+              });
+  
+              // Update local state
+              setPayments((prev) =>
+                prev.map((p) =>
+                  p.id === paymentDoc.id
+                    ? { ...p, amount: p.amount - serviceCostCents }
+                    : p
+                )
+              );
+  
+              setBalance((prevBalance) => prevBalance - serviceCostCents);
+              toast({
+                title: 'Success',
+                description: `Service cost of $${(serviceCostCents / 1700).toFixed(2)} has been deducted.`,
+              });
+            } else {
+              toast({
+                title: 'Error',
+                description: 'No payment record with sufficient balance found.',
+                variant: 'destructive',
+              });
+            }
             setLoading(false);
           }
         },
@@ -345,8 +444,8 @@ export default function DashboardPage() {
           {smsCode && smsText && (
             <div className="mt-4 p-4 bg-gray-100 rounded-md">
               <h3 className="font-bold">SMS Received:</h3>
-              <p>Code: {smsCode}</p>
-              <p>Message: {smsText}</p>
+              <p className="text-xl">Code: <span className="font-bold pl-2">{smsCode}</span></p>
+              <p className='text-xl'>Message: <span className='font-bold pl-2'>{smsText}</span></p>
             </div>
           )}
         </DialogContent>

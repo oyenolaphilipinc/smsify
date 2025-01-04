@@ -101,32 +101,55 @@ export default function Navbar() {
         return balance / 1700
     }
     useEffect(() => {
-        async function fetchPayments() {
-          if (!user) return
+      async function fetchPayments() {
+        if (!user) return;
     
-          try {
-            const paymentsRef = collection(db, 'payments')
-            const q = query(paymentsRef, where('customer.email', '==', user.email))
-            const querySnapshot = await getDocs(q)
-            
+        try {
+          const paymentsRef = collection(db, 'payments');
+          const q = query(paymentsRef, where('customer.email', '==', user.email));
+          const querySnapshot = await getDocs(q);
+    
+          if (querySnapshot.empty) {
+            // Create default payment data if no payments exist
+            const defaultPayment: PaymentData = {
+              id: `default-${Date.now()}`, // Unique identifier (use transactionId as id)
+              transactionId: `default-${Date.now()}`,
+              userId: user.uid || '', // Use user.uid as userId
+              status: 'default', // Default status
+              amount: 0, // Initial amount
+              customer: {
+                email: user.email || '',
+                phone_number: "optional",
+                name: user.displayName || '',
+              },
+              createdAt: new Date().toISOString(),
+            };
+    
+            await setDoc(doc(db, 'payments', defaultPayment.id), defaultPayment);
+    
+            setPayments([defaultPayment]); // Update state with the default payment
+          } else {
             const paymentData = querySnapshot.docs.map(doc => ({
               id: doc.id,
-              ...doc.data()
-            })) as PaymentData[]
+              ...doc.data(),
+            })) as PaymentData[];
     
-            setPayments(paymentData)
-          } catch (err) {
-            setError('Error fetching payment data')
-            console.error(err)
-          } finally {
-            setLoading(false)
+            setPayments(paymentData);
           }
+        } catch (err) {
+          setError('Error fetching payment data');
+          console.error(err);
+        } finally {
+          setLoading(false);
         }
+      }
     
-        if (!authLoading) {
-          fetchPayments()
-        }
-      }, [user, authLoading])
+      if (!authLoading) {
+        fetchPayments();
+      }
+    }, [user, authLoading]);
+    
+    
 
   return (
     <nav className="w-full border-b border-[#dee2e6] bg-white px-4 py-3">
