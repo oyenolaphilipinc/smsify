@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ChevronDown, LogOut, Send, User } from 'lucide-react'
+import { getAuth, signOut } from "firebase/auth";
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import {
@@ -25,6 +26,25 @@ export default function Navbar() {
     const router = useRouter();
     const { toast } = useToast();
     const { user, loading: authLoading } = useAuth();
+
+    const handleLogout = async () => {
+      const auth = getAuth();
+      try {
+        await signOut(auth);
+        toast({
+          title: "Logged out",
+          description: "You have been successfully logged out.",
+        });
+        router.push("/login"); // Redirect to the home page or login page
+      } catch (error) {
+        console.error("Logout failed:", error);
+        toast({
+          title: "Error",
+          description: "Failed to log out. Please try again.",
+          variant: "destructive",
+        });
+      }
+    };
   
     const handleSuccess = async (response: any) => {
       console.log('Payment successful:', response);
@@ -211,7 +231,7 @@ export default function Navbar() {
                   Profile
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem className="flex items-center gap-2 text-red-600">
+              <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 text-red-600">
                 <LogOut className="h-4 w-4" />
                 Log out
               </DropdownMenuItem>
