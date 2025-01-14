@@ -1,9 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { getAuth, signOut } from "firebase/auth";
 import Link from 'next/link'
 import { Mail, Smartphone, Shield, User, CreditCard, ThumbsUp, BookOpen, Network, MessageSquare, HelpCircle, LogOut, Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 const navigation = [
   { name: 'Dashboard', icon: Mail, href: '/dashboard' },
@@ -19,6 +22,27 @@ const navigation = [
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const router = useRouter()
+  const { toast } = useToast()
+
+  const handleLogout = async () => {
+    const auth = getAuth();
+    try {
+      await signOut(auth);
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+      router.push("/login"); // Redirect to the home page or login page
+    } catch (error) {
+      console.error("Logout failed:", error);
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     const checkIsMobile = () => {
@@ -84,7 +108,7 @@ export function Sidebar() {
               <HelpCircle className="mr-3 h-5 w-5 text-[#088aff]" />
               <span>Help</span>
             </Link>
-            <button className="group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-600">
+            <button onClick={handleLogout} className="group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-600">
               <LogOut className="mr-3 h-5 w-5 text-[#088aff]" />
               <span>Log out</span>
             </button>
