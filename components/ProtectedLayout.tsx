@@ -37,7 +37,7 @@ export default function ProtectedLayout({
     <div className='flex justify-between'>
       <Sidebar />
       <main className="flex-1">
-        <div className='md:ml-60'>
+        <div className='md:ml-56'>
           <Navbar />
         </div>
         <div className='md:ml-64'>
