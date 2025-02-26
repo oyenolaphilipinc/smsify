@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { PaymentData } from '@/types/payment';
-import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/useAuth';
 import Image from 'next/image';
@@ -31,6 +31,17 @@ interface Service {
 interface Country {
   country_id: string;
   name: string;
+  flag?: string; // Added for dynamic flag URL
+}
+
+interface HistoryItem {
+  id: string;
+  phoneNumber: string;
+  smsCode: string;
+  smsText: string;
+  serviceName: string;
+  countryName: string;
+  timestamp: string;
 }
 
 export default function DashboardPage() {
@@ -50,6 +61,7 @@ export default function DashboardPage() {
   const [activationId, setActivationId] = useState('');
   const [smsCode, setSmsCode] = useState('');
   const [smsText, setSmsText] = useState('');
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const { toast } = useToast();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
@@ -79,7 +91,12 @@ export default function DashboardPage() {
       try {
         setLoading(true);
         const data = await getCountries();
-        setCountries(data);
+        // Enrich countries with flag URLs
+        const enrichedCountries = data.map((country: Country) => ({
+          ...country,
+          flag: `https://flagcdn.com/24x18/${country.country_id.toLowerCase()}.png`,
+        }));
+        setCountries(enrichedCountries);
       } catch (error) {
         toast({
           title: 'Error',
@@ -93,6 +110,31 @@ export default function DashboardPage() {
 
     fetchCountries();
   }, []);
+
+  useEffect(() => {
+    async function fetchHistory() {
+      if (!user) return;
+
+      try {
+        const historyRef = collection(db, 'history');
+        const q = query(historyRef, where('userId', '==', user.uid));
+        const querySnapshot = await getDocs(q);
+
+        const historyData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as HistoryItem[];
+
+        setHistory(historyData);
+      } catch (err) {
+        console.error('Error fetching history:', err);
+      }
+    }
+
+    if (!authLoading) {
+      fetchHistory();
+    }
+  }, [user, authLoading]);
 
   const filteredServices = services.filter(service => 
     service.name.toLowerCase().includes(serviceSearch.toLowerCase())
@@ -138,7 +180,6 @@ export default function DashboardPage() {
 
         setPayments(paymentData);
 
-        // Calculate total balance in cents
         const totalBalanceCents = paymentData.reduce((acc, payment) => acc + payment.amount, 0);
         setBalance(totalBalanceCents);
       } catch (err) {
@@ -243,19 +284,34 @@ export default function DashboardPage() {
             setSmsCode(data.sms_code);
             setSmsText(data.sms_text);
   
-            // Deduct the service cost from the balance
-            const serviceCostCents = 1530; // Replace with the actual cost
-            const paymentDoc = payments.find((payment) => payment.amount >= serviceCostCents); // Find the document with sufficient balance
-  
+            const serviceCostCents = 1530;
+            const paymentDoc = payments.find((payment) => payment.amount >= serviceCostCents);
+
             if (paymentDoc) {
               const paymentDocRef = doc(db, 'payments', paymentDoc.id);
-  
-              // Update the amount field
               await updateDoc(paymentDocRef, {
                 amount: paymentDoc.amount - serviceCostCents,
               });
-  
-              // Update local state
+
+              // Add to history collection
+              const historyDoc = {
+                userId: user.uid,
+                phoneNumber,
+                smsCode: data.sms_code,
+                smsText: data.sms_text,
+                serviceName: selectedService.name,
+                countryName: selectedCountry.name,
+                timestamp: new Date().toISOString(),
+              };
+
+              const docRef = await addDoc(collection(db, 'history'), historyDoc);
+              
+              // Update local history state
+              setHistory(prev => [{
+                ...historyDoc,
+                id: docRef.id
+              }, ...prev]);
+
               setPayments((prev) =>
                 prev.map((p) =>
                   p.id === paymentDoc.id
@@ -377,7 +433,17 @@ export default function DashboardPage() {
                   onClick={() => handleCountrySelect(country)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 bg-gray-200 rounded-full" />
+                    {country.flag ? (
+                      <Image
+                        src={country.flag}
+                        alt={`${country.name} flag`}
+                        width={24}
+                        height={18}
+                        className="rounded-sm"
+                      />
+                    ) : (
+                      <div className="w-6 h-[18px] bg-gray-200 rounded-sm" />
+                    )}
                     <span className="text-sm md:text-md">{country.name}</span>
                     <span className="text-gray-500 hidden md:flex uppercase">{country.country_id}</span>
                   </div>
@@ -410,6 +476,37 @@ export default function DashboardPage() {
               <input type="checkbox" className="rounded border-gray-300" />
               <span>Multiple purchase</span>
             </label>
+          </div>
+
+          <div className="">
+            <h1 className="text-xl font-bold mb-4">History</h1>
+            {history.length === 0 ? (
+              <p className="text-gray-500">No history yet</p>
+            ) : (
+              <div className="space-y-4">
+                {history.map((item) => (
+                  <div 
+                    key={item.id}
+                    className="p-4 rounded-lg bg-gray-50 border border-gray-200"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-semibold">+{item.phoneNumber}</p>
+                        <p className="text-sm text-gray-600">Code: {item.smsCode}</p>
+                        <p className="text-sm text-gray-600">Message: {item.smsText}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-600">{item.serviceName}</p>
+                        <p className="text-sm text-gray-600">{item.countryName}</p>
+                        <p className="text-sm text-gray-500">
+                          {new Date(item.timestamp).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -453,4 +550,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
