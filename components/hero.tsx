@@ -2,9 +2,11 @@
 
 import { motion } from "framer-motion";
 import { MessageSquare, ArrowRight } from "lucide-react";
+import { useAuth } from '@/hooks/useAuth';
 import Link from "next/link";
 
 export function Hero() {
+  const { user, loading: authLoading } = useAuth();
   return (
     <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-b from-primary/5 to-primary/10 overflow-hidden">
       <div className="absolute inset-0 z-0">
@@ -42,10 +44,10 @@ export function Hero() {
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
             <Link
-              href="/signup"
+              href={user ? "/dashboard" : "/signup"}
               className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary hover:bg-primary/90 transition-colors"
             >
-              Get Started <ArrowRight className="ml-2 h-5 w-5" />
+              {user ? "Dashboard" : "Get Started"} <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
             <Link
               href="#how-it-works"
