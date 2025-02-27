@@ -1,11 +1,133 @@
-"use client"
-import { useState } from "react"
-import { DollarSign } from "lucide-react"
+"use client";
+import { useState } from "react";
+import { DollarSign } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useFlutterwave, closePaymentModal } from "flutterwave-react-v3";
+import { collection, query, where, getDocs, setDoc, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase"; // Adjust path to your Firebase config
+import { useRouter } from "next/navigation";
+import { PaymentData } from "@/types/payment";
+import { useAuth } from '@/hooks/useAuth';
 
 export default function TopUpPage() {
-  const [selectedPayment, setSelectedPayment] = useState<string | null>("visa")
-  const [selectedAmount, setSelectedAmount] = useState<string | null>("10")
-  const [customAmount, setCustomAmount] = useState<string>("")
+  const { toast } = useToast();
+  const [selectedPayment, setSelectedPayment] = useState<string | null>("visa");
+  const [selectedAmount, setSelectedAmount] = useState<string | null>("10");
+  const [customAmount, setCustomAmount] = useState<string>("");
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+
+  // Flutterwave configuration
+  const config = {
+    public_key: "FLWPUBK_TEST-0f4764dff4e84759438ba6595737afe7-X", // Replace with your actual public key
+    tx_ref: `tx_${Date.now()}`, // Unique transaction reference
+    amount: selectedAmount === "other" ? parseFloat(customAmount) || 0 : parseFloat(selectedAmount || "0"),
+    currency: "USD", // Adjust currency as needed
+    payment_options: "card", // Restrict to card payments (includes Visa)
+    customer: {
+      email: user?.email || "user@example.com",
+      name: user?.displayName || "John Doe",
+      phone_number: "+123456789"
+    },
+    customizations: {
+      title: "Top Up",
+      description: "Top up your balance",
+      logo: "https://seekicon.com/free-icon-download/next-js_1.png", // Optional
+    },
+  };
+
+  // Initialize Flutterwave payment hook
+  const handleFlutterPayment = useFlutterwave(config);
+
+  // Payment handler function
+  const handlePayment = () => {
+    const amount = selectedAmount === "other" ? parseFloat(customAmount) : parseFloat(selectedAmount || "0");
+
+    if (isNaN(amount) || amount <= 3) {
+      toast({
+        title: "Error",
+        description: "The least amount for deposit is $3",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedPayment !== "visa") {
+      alert("Please select Visa as the payment method");
+      return;
+    }
+
+    handleFlutterPayment({
+      callback: async (response) => {
+        if (response.status === "successful") {
+          try {
+            const transactionId = String(response.transaction_id);
+
+            // Query the users collection to find the user by UID
+            const paymentsRef = collection(db, "payments");
+            const q = query(paymentsRef, where("customer.email", "==", user?.email || ''));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+              // User exists, update their balance
+              const existingPayment = querySnapshot.docs[0]; // Assuming one document per UID
+              const currentBalance = existingPayment.data() as PaymentData;
+              const newBalance = currentBalance.amount + Number(response.amount);
+
+              // Update the existing document
+              await setDoc(
+                doc(db, "payments", existingPayment.id),
+                {
+                  ...currentBalance,
+                  amount: newBalance,
+                  updatedAt: new Date().toISOString(),
+                },
+                { merge: true } // Merge to avoid overwriting other fields
+              );
+
+              toast({
+                title: "Balance Updated",
+                description: `New Balance: $${newBalance.toLocaleString()}`,
+              });
+            } else {
+              // User doesn't exist, create a new document
+              const paymentData = {
+                transactionId,
+                status: response.status,
+                amount: Number(response.amount),
+                customer: {
+                  email: user?.email || '',
+                  uid: user?.uid || '',
+                  name: user?.displayName || '',
+                },
+                createdAt: new Date().toISOString(),
+              };
+              await setDoc(doc(db, 'payments', transactionId), paymentData);
+
+              toast({
+                title: "Payment Successful",
+                description: `Initial Balance: $${Number(response.amount).toLocaleString()}`,
+              });
+            }
+
+            router.push("/dashboard");
+          } catch (error) {
+            toast({
+              title: "Error",
+              description: "Failed to update balance. Please contact support.",
+              variant: "destructive",
+            });
+          }
+        } else {
+          alert("Payment failed.");
+        }
+        closePaymentModal();
+      },
+      onClose: () => {
+        console.log("Payment modal closed");
+      },
+    });
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
@@ -16,11 +138,11 @@ export default function TopUpPage() {
           {/* Step 1: Payment Method */}
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">1. Choose a payment method</h2>
-
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {/* Payment Method Cards - Row 1 */}
               <button
-                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${selectedPayment === "visa" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"}`}
+                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${
+                  selectedPayment === "visa" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"
+                }`}
                 onClick={() => setSelectedPayment("visa")}
               >
                 <div className="flex flex-col items-center">
@@ -36,7 +158,9 @@ export default function TopUpPage() {
               </button>
 
               <button
-                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${selectedPayment === "wechat" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"}`}
+                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${
+                  selectedPayment === "wechat" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"
+                }`}
                 onClick={() => setSelectedPayment("wechat")}
               >
                 <div className="flex items-center">
@@ -46,7 +170,9 @@ export default function TopUpPage() {
               </button>
 
               <button
-                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${selectedPayment === "alipay" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"}`}
+                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${
+                  selectedPayment === "alipay" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"
+                }`}
                 onClick={() => setSelectedPayment("alipay")}
               >
                 <div className="flex items-center">
@@ -55,7 +181,9 @@ export default function TopUpPage() {
               </button>
 
               <button
-                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${selectedPayment === "crypto" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"}`}
+                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${
+                  selectedPayment === "crypto" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"
+                }`}
                 onClick={() => setSelectedPayment("crypto")}
               >
                 <div className="flex items-center space-x-1">
@@ -69,7 +197,9 @@ export default function TopUpPage() {
               </button>
 
               <button
-                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${selectedPayment === "usdt" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"}`}
+                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${
+                  selectedPayment === "usdt" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"
+                }`}
                 onClick={() => setSelectedPayment("usdt")}
               >
                 <div className="flex items-center gap-2">
@@ -84,7 +214,9 @@ export default function TopUpPage() {
               </button>
 
               <button
-                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${selectedPayment === "ton" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"}`}
+                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${
+                  selectedPayment === "ton" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"
+                }`}
                 onClick={() => setSelectedPayment("ton")}
               >
                 <div className="flex flex-col items-center">
@@ -95,9 +227,10 @@ export default function TopUpPage() {
                 </div>
               </button>
 
-              {/* Payment Method Cards - Row 2 */}
               <button
-                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${selectedPayment === "payeer" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"}`}
+                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${
+                  selectedPayment === "payeer" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"
+                }`}
                 onClick={() => setSelectedPayment("payeer")}
               >
                 <div className="flex items-center">
@@ -109,7 +242,9 @@ export default function TopUpPage() {
               </button>
 
               <button
-                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${selectedPayment === "paytm" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"}`}
+                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${
+                  selectedPayment === "paytm" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"
+                }`}
                 onClick={() => setSelectedPayment("paytm")}
               >
                 <div className="flex flex-col items-center space-y-1">
@@ -123,7 +258,9 @@ export default function TopUpPage() {
               </button>
 
               <button
-                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${selectedPayment === "promptpay" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"}`}
+                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${
+                  selectedPayment === "promptpay" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"
+                }`}
                 onClick={() => setSelectedPayment("promptpay")}
               >
                 <div className="flex items-center">
@@ -141,29 +278,31 @@ export default function TopUpPage() {
               2. Specify top up amount
               <DollarSign className="w-5 h-5 ml-1 text-blue-500" />
             </h2>
-
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <button
-                className={`border rounded-xl py-3 px-4 transition-all ${selectedAmount === "10" ? "bg-blue-50 border-blue-500" : "border-gray-200 bg-blue-50 hover:border-gray-300"}`}
+                className={`border rounded-xl py-3 px-4 transition-all ${
+                  selectedAmount === "10" ? "bg-blue-50 border-blue-500" : "border-gray-200 bg-blue-50 hover:border-gray-300"
+                }`}
                 onClick={() => setSelectedAmount("10")}
               >
                 10$
               </button>
-
               <button
-                className={`border rounded-xl py-3 px-4 transition-all ${selectedAmount === "50" ? "bg-blue-50 border-blue-500" : "border-gray-200 bg-blue-50 hover:border-gray-300"}`}
+                className={`border rounded-xl py-3 px-4 transition-all ${
+                  selectedAmount === "50" ? "bg-blue-50 border-blue-500" : "border-gray-200 bg-blue-50 hover:border-gray-300"
+                }`}
                 onClick={() => setSelectedAmount("50")}
               >
                 50$
               </button>
-
               <button
-                className={`border rounded-xl py-3 px-4 transition-all ${selectedAmount === "100" ? "bg-blue-50 border-blue-500" : "border-gray-200 bg-blue-50 hover:border-gray-300"}`}
+                className={`border rounded-xl py-3 px-4 transition-all ${
+                  selectedAmount === "100" ? "bg-blue-50 border-blue-500" : "border-gray-200 bg-blue-50 hover:border-gray-300"
+                }`}
                 onClick={() => setSelectedAmount("100")}
               >
                 100$
               </button>
-
               <input
                 type="text"
                 placeholder="Other amount"
@@ -171,15 +310,18 @@ export default function TopUpPage() {
                 className="border rounded-xl py-3 px-4 text-center transition-all text-gray-500 border-gray-200 bg-blue-50 hover:border-gray-300 focus:border-blue-500 focus:bg-blue-50 focus:outline-none"
                 onClick={() => setSelectedAmount("other")}
                 onChange={(e) => {
-                  setSelectedAmount("other")
-                  setCustomAmount(e.target.value)
+                  setSelectedAmount("other");
+                  setCustomAmount(e.target.value);
                 }}
               />
             </div>
           </div>
 
           {/* Pay Button */}
-          <button className="w-full sm:w-auto bg-[#0187ff] hover:bg-blue-600 text-white font-medium py-2 px-16 rounded-lg transition-colors">
+          <button
+            className="w-full sm:w-auto bg-[#0187ff] hover:bg-blue-600 text-white font-medium py-2 px-16 rounded-lg transition-colors"
+            onClick={handlePayment}
+          >
             Pay
           </button>
 
@@ -201,6 +343,5 @@ export default function TopUpPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-

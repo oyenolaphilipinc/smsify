@@ -45,6 +45,10 @@ export default function Navbar() {
         });
       }
     };
+
+    const handleClick = () => {
+      router.push("/top-up")
+    }
   
     const handleSuccess = async (response: any) => {
       console.log('Payment successful:', response);
@@ -190,29 +194,9 @@ export default function Navbar() {
             <div key={payment.transactionId} className="flex items-center gap-4 border px-4 py-2 border-yellow-500 rounded-md">
                 <div className="text-sm md:text-md flex flex-col mr-2 ml-2 text-gray-500">
                     Balance:{" "}
-                    <span className="text-black font-bold">$ {convertNaira(payment.amount).toLocaleString()}</span>
+                    <span className="text-black font-bold">$ {payment.amount}</span>
                 </div>
-                <FlutterWaveButton
-                    public_key = {"FLWPUBK_TEST-0f4764dff4e84759438ba6595737afe7-X"} // Replace with your key
-                    tx_ref = {`tx-${Date.now()}`}
-                    amount = {5000} // Replace with the actual amount
-                    currency = {'NGN'}
-                    payment_options = {'card, mobilemoney, ussd'}
-                      customer = {{
-                        email: `${user?.email}`, // Replace with user's email
-                        phone_number: '08012345678', // Optional
-                        name: `${user?.displayName}`, // Replace with user's name
-                      }}
-                      customizations = {{
-                        title: 'My Payment Title',
-                        description: 'Payment for items in cart',
-                        logo: '/flutter.png', // Optional
-                      }}
-                    text="Top Up"
-                    className="bg-[#ffc700] font-medium text-sm md:text-md text-black hover:bg-[#ffc700]/90 px-2 md:px-4 py-2 rounded-md"
-                    callback={handleSuccess}
-                    onClose={handleClose}
-                />
+                <Button className="bg-[#ffc700] font-medium text-sm md:text-md text-black hover:bg-[#ffc700]/90 px-2 md:px-4 py-2 rounded-md" onClick={handleClick}>Top up</Button>
             </div>
         ))}
           <DropdownMenu>
