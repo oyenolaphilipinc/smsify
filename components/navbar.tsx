@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, MessageSquare } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from '@/hooks/useAuth';
 
 export function Navbar() {
+  const { user, loading: authLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -55,10 +57,10 @@ export function Navbar() {
                 </Link>
               ))}
               <Link
-                href="/signup"
+                href={user ? "/dashboard" : "/signup"}
                 className="bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
               >
-                Get Started
+                {user ? "Dashboard" : "Get Started"}
               </Link>
             </div>
           </div>
@@ -100,7 +102,7 @@ export function Navbar() {
                 onClick={() => setIsOpen(false)}
                 className="bg-primary text-white block px-3 py-2 rounded-md text-base font-medium hover:bg-primary/90"
               >
-                Get Started
+                {user ? "Dashboard" : "Get Started"}
               </Link>
             </div>
           </motion.div>
