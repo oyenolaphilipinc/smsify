@@ -34,6 +34,18 @@ interface Country {
   flag?: string; // Added for dynamic flag URL
 }
 
+interface PriceResponse {
+  price: {
+    min: number;
+    max: number;
+    suggested: number;
+  };
+  quality: {
+    avg: number;
+  };
+  count: number;
+}
+
 interface HistoryItem {
   id: string;
   phoneNumber: string;
@@ -45,7 +57,7 @@ interface HistoryItem {
 }
 
 export default function DashboardPage() {
-  const [payments, setPayments] = useState<PaymentData[]>([])
+  const [payments, setPayments] = useState<PaymentData[]>([]);
   const [serviceSearch, setServiceSearch] = useState('');
   const [balance, setBalance] = useState(0);
   const [services, setServices] = useState<Service[]>([]);
@@ -62,10 +74,14 @@ export default function DashboardPage() {
   const [smsCode, setSmsCode] = useState('');
   const [smsText, setSmsText] = useState('');
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [servicePrice, setServicePrice] = useState<number | null>(null); // Store the suggested price
   const { toast } = useToast();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
+  const PROFIT_MARGIN = 0.20; // 20% profit margin
+
+  // Fetch services
   useEffect(() => {
     const fetchServices = async () => {
       try {
@@ -86,12 +102,12 @@ export default function DashboardPage() {
     fetchServices();
   }, []);
 
+  // Fetch countries
   useEffect(() => {
     const fetchCountries = async () => {
       try {
         setLoading(true);
         const data = await getCountries();
-        // Enrich countries with flag URLs
         const enrichedCountries = data.map((country: Country) => ({
           ...country,
           flag: `https://flagcdn.com/24x18/${country.country_id.toLowerCase()}.png`,
@@ -111,6 +127,7 @@ export default function DashboardPage() {
     fetchCountries();
   }, []);
 
+  // Fetch history
   useEffect(() => {
     async function fetchHistory() {
       if (!user) return;
@@ -136,34 +153,7 @@ export default function DashboardPage() {
     }
   }, [user, authLoading]);
 
-  const filteredServices = services.filter(service => 
-    service.name.toLowerCase().includes(serviceSearch.toLowerCase())
-  );
-
-  const displayedServices = showAllServices 
-    ? filteredServices 
-    : filteredServices.slice(0, 4);
-
-  const remainingServicesCount = filteredServices.length - 4;
-
-  const filteredCountries = countries.filter(country => 
-    country.name.toLowerCase().includes(countrySearch.toLowerCase())
-  );
-
-  const displayedCountries = showAllCountries
-    ? filteredCountries 
-    : filteredCountries.slice(0, 4);
-
-  const remainingCountriesCount = filteredCountries.length - 4;
-
-  const handleServiceSelect = (service: Service) => {
-    setSelectedService(service);
-  };
-
-  const handleCountrySelect = (country: Country) => {
-    setSelectedCountry(country);
-  };
-
+  // Fetch payments and balance
   useEffect(() => {
     async function fetchPayments() {
       if (!user) return;
@@ -199,6 +189,71 @@ export default function DashboardPage() {
     }
   }, [user, authLoading]);
 
+  // Filter services and countries for display
+  const filteredServices = services.filter(service => 
+    service.name.toLowerCase().includes(serviceSearch.toLowerCase())
+  );
+
+  const displayedServices = showAllServices 
+    ? filteredServices 
+    : filteredServices.slice(0, 4);
+
+  const remainingServicesCount = filteredServices.length - 4;
+
+  const filteredCountries = countries.filter(country => 
+    country.name.toLowerCase().includes(countrySearch.toLowerCase())
+  );
+
+  const displayedCountries = showAllCountries
+    ? filteredCountries 
+    : filteredCountries.slice(0, 4);
+
+  const remainingCountriesCount = filteredCountries.length - 4;
+
+  // Fetch price when service or country is selected
+  const fetchServicePrice = async (serviceId: string, countryId: string) => {
+    try {
+      setLoading(true);
+      const response = await axios.get(
+        `https://temp-number-api.com/test/api/v1/activation/prices/services/${serviceId}/countries/${countryId}`,
+        {
+          headers: {
+            'X-Api-Key': '13586878e3944331a7158fbe936c6d41', // Replace with your actual API key
+          },
+        }
+      );
+      const { price } = response.data as PriceResponse;
+      setServicePrice(price.suggested); // Store suggested price in cents
+    } catch (error) {
+      console.error('Error fetching price:', error);
+      toast({
+        title: 'Error',
+        description: 'Unable to fetch price for this combination.',
+        variant: 'destructive',
+      });
+      setServicePrice(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle service selection
+  const handleServiceSelect = (service: Service) => {
+    setSelectedService(service);
+    if (selectedCountry) {
+      fetchServicePrice(service.service_id, selectedCountry.country_id);
+    }
+  };
+
+  // Handle country selection
+  const handleCountrySelect = (country: Country) => {
+    setSelectedCountry(country);
+    if (selectedService) {
+      fetchServicePrice(selectedService.service_id, country.country_id);
+    }
+  };
+
+  // Handle getting a phone number
   const handleGetNumber = async () => {
     if (!selectedService || !selectedCountry) {
       toast({
@@ -209,7 +264,17 @@ export default function DashboardPage() {
       return;
     }
 
-    const serviceCostCents = 180;
+    if (!servicePrice) {
+      toast({
+        title: 'Error',
+        description: 'Price not available for this combination. Please try again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const displayPrice = servicePrice * (1 + PROFIT_MARGIN); // Price with profit in cents
+    const displayPriceCents = displayPrice / 100; // Ensure it's in cents
 
     if (balance <= 0) {
       toast({
@@ -220,12 +285,10 @@ export default function DashboardPage() {
       return;
     }
 
-    if (balance < serviceCostCents) {
+    if (balance < displayPriceCents) {
       toast({
         title: 'Insufficient Funds',
-        description: `Your balance is insufficient for this service. Please top up to cover the cost of $${(
-          serviceCostCents / 100
-        ).toFixed(2)}.`,
+        description: `Your balance is insufficient. Please top up to cover $${(displayPrice / 100).toFixed(2)}.`,
         variant: 'destructive',
       });
       return;
@@ -238,13 +301,13 @@ export default function DashboardPage() {
         {
           service_id: selectedService.service_id,
           country_id: selectedCountry.country_id,
-          max_price: serviceCostCents,
+          max_price: servicePrice, // Use the original suggested price for the API
           quality_factor: 10,
         },
         {
           headers: {
             'X-Api-Key': '13586878e3944331a7158fbe936c6d41',
-          }
+          },
         }
       );
 
@@ -264,6 +327,7 @@ export default function DashboardPage() {
     }
   };
 
+  // Handle copying the phone number
   const handleCopyNumber = () => {
     navigator.clipboard.writeText(phoneNumber);
     toast({
@@ -272,9 +336,10 @@ export default function DashboardPage() {
     });
   };
 
+  // Handle getting SMS
   const handleGetSMS = async () => {
     if (!user || !selectedService || !selectedCountry) return;
-  
+
     try {
       setLoading(true);
       await pollForSMS(
@@ -283,17 +348,28 @@ export default function DashboardPage() {
           if (data.sms_code && data.sms_text) {
             setSmsCode(data.sms_code);
             setSmsText(data.sms_text);
-  
-            const serviceCostCents = 0.9;
-            const paymentDoc = payments.find((payment) => payment.amount >= serviceCostCents);
+
+            if (!servicePrice) {
+              toast({
+                title: 'Error',
+                description: 'Price not available for deduction.',
+                variant: 'destructive',
+              });
+              setLoading(false);
+              return;
+            }
+
+            const displayPrice = servicePrice * (1 + PROFIT_MARGIN); // Price with profit in cents
+            const displayPriceCents = displayPrice / 100;
+
+            const paymentDoc = payments.find((payment) => payment.amount >= displayPriceCents);
 
             if (paymentDoc) {
               const paymentDocRef = doc(db, 'payments', paymentDoc.id);
               await updateDoc(paymentDocRef, {
-                amount: paymentDoc.amount - serviceCostCents,
+                amount: paymentDoc.amount - displayPriceCents,
               });
 
-              // Add to history collection
               const historyDoc = {
                 userId: user.uid,
                 phoneNumber,
@@ -305,9 +381,8 @@ export default function DashboardPage() {
               };
 
               const docRef = await addDoc(collection(db, 'history'), historyDoc);
-              
-              // Update local history state
-              setHistory(prev => [{
+
+              setHistory((prev) => [{
                 ...historyDoc,
                 id: docRef.id
               }, ...prev]);
@@ -315,15 +390,15 @@ export default function DashboardPage() {
               setPayments((prev) =>
                 prev.map((p) =>
                   p.id === paymentDoc.id
-                    ? { ...p, amount: p.amount - serviceCostCents }
+                    ? { ...p, amount: p.amount - displayPriceCents }
                     : p
                 )
               );
-  
-              setBalance((prevBalance) => prevBalance - serviceCostCents);
+
+              setBalance((prevBalance) => prevBalance - displayPriceCents);
               toast({
                 title: 'Success',
-                description: `Service cost of $${(serviceCostCents / 1700).toFixed(2)} has been deducted.`,
+                description: `Service cost of $${(displayPrice / 100).toFixed(2)} has been deducted.`,
               });
             } else {
               toast({
@@ -374,23 +449,29 @@ export default function DashboardPage() {
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {displayedServices.map((service) => (
-                <div
-                  key={service.service_id}
-                  className={`flex items-center justify-between p-4 rounded-lg ${
-                    selectedService?.service_id === service.service_id
-                      ? 'bg-blue-200'
-                      : 'bg-blue-50 hover:bg-blue-100'
-                  } cursor-pointer`}
-                  onClick={() => handleServiceSelect(service)}
-                >
-                  <div className="flex items-center gap-3">
-                    <Image src={service.icon || '/placeholder.png'} alt={service.name} width={30} height={30} />
-                    <span>{service.name}</span>
+              {displayedServices.map((service) => {
+                const displayPrice =
+                  selectedService?.service_id === service.service_id && servicePrice && selectedCountry
+                    ? (servicePrice * (1 + PROFIT_MARGIN) / 100).toFixed(2) // Convert cents to dollars with profit
+                    : 'N/A';
+                return (
+                  <div
+                    key={service.service_id}
+                    className={`flex items-center justify-between p-4 rounded-lg ${
+                      selectedService?.service_id === service.service_id
+                        ? 'bg-blue-200'
+                        : 'bg-blue-50 hover:bg-blue-100'
+                    } cursor-pointer`}
+                    onClick={() => handleServiceSelect(service)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Image src={service.icon || '/placeholder.png'} alt={service.name} width={30} height={30} />
+                      <span>{service.name}</span>
+                    </div>
+                    <span className="text-gray-500">${displayPrice}</span>
                   </div>
-                  <span className="text-gray-500">{service.service_id}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
           {remainingServicesCount > 0 && (
