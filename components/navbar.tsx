@@ -98,7 +98,7 @@ export function Navbar() {
                 </Link>
               ))}
               <Link
-                href={user ? "/signup" : "/dashboard"}
+                href={user ? "/dashboard" : "/signup"}
                 onClick={() => setIsOpen(false)}
                 className="bg-primary text-white block px-3 py-2 rounded-md text-base font-medium hover:bg-primary/90"
               >
