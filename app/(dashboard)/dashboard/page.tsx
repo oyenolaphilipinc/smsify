@@ -284,7 +284,7 @@ export default function DashboardPage() {
             setSmsCode(data.sms_code);
             setSmsText(data.sms_text);
   
-            const serviceCostCents = 0.8;
+            const serviceCostCents = 0.9;
             const paymentDoc = payments.find((payment) => payment.amount >= serviceCostCents);
 
             if (paymentDoc) {
