@@ -112,7 +112,7 @@ export default function PaymentProfile() {
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Amount</h3>
                 <p className="text-2xl font-bold">
-                  ₦{payment.amount.toLocaleString()}
+                  ${payment.amount.toLocaleString()}
                 </p>
               </div>
               <div>
