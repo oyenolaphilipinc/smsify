@@ -31,7 +31,7 @@ interface Service {
 interface Country {
   country_id: string;
   name: string;
-  flag?: string; // Added for dynamic flag URL
+  flag?: string;
 }
 
 interface PriceResponse {
@@ -56,6 +56,11 @@ interface HistoryItem {
   timestamp: string;
 }
 
+interface ActivationState {
+  activationId: string;
+  hasBeenCharged: boolean;
+}
+
 export default function DashboardPage() {
   const [payments, setPayments] = useState<PaymentData[]>([]);
   const [serviceSearch, setServiceSearch] = useState('');
@@ -70,18 +75,17 @@ export default function DashboardPage() {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [activationId, setActivationId] = useState('');
+  const [activationState, setActivationState] = useState<ActivationState | null>(null);
   const [smsCode, setSmsCode] = useState('');
   const [smsText, setSmsText] = useState('');
   const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [servicePrice, setServicePrice] = useState<number | null>(null); // Store the suggested price
+  const [servicePrice, setServicePrice] = useState<number | null>(null);
   const { toast } = useToast();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
-  const PROFIT_MARGIN = 0.20; // 20% profit margin
+  const PROFIT_MARGIN = 0.20;
 
-  // Fetch services
   useEffect(() => {
     const fetchServices = async () => {
       try {
@@ -102,7 +106,6 @@ export default function DashboardPage() {
     fetchServices();
   }, []);
 
-  // Fetch countries
   useEffect(() => {
     const fetchCountries = async () => {
       try {
@@ -127,7 +130,6 @@ export default function DashboardPage() {
     fetchCountries();
   }, []);
 
-  // Fetch history
   useEffect(() => {
     async function fetchHistory() {
       if (!user) return;
@@ -153,7 +155,6 @@ export default function DashboardPage() {
     }
   }, [user, authLoading]);
 
-  // Fetch payments and balance
   useEffect(() => {
     async function fetchPayments() {
       if (!user) return;
@@ -189,7 +190,6 @@ export default function DashboardPage() {
     }
   }, [user, authLoading]);
 
-  // Filter services and countries for display
   const filteredServices = services.filter(service => 
     service.name.toLowerCase().includes(serviceSearch.toLowerCase())
   );
@@ -210,7 +210,6 @@ export default function DashboardPage() {
 
   const remainingCountriesCount = filteredCountries.length - 4;
 
-  // Fetch price when service or country is selected
   const fetchServicePrice = async (serviceId: string, countryId: string) => {
     try {
       setLoading(true);
@@ -218,12 +217,12 @@ export default function DashboardPage() {
         `https://temp-number-api.com/test/api/v1/activation/prices/services/${serviceId}/countries/${countryId}`,
         {
           headers: {
-            'X-Api-Key': '13586878e3944331a7158fbe936c6d41', // Replace with your actual API key
+            'X-Api-Key': '13586878e3944331a7158fbe936c6d41',
           },
         }
       );
       const { price } = response.data as PriceResponse;
-      setServicePrice(price.suggested); // Store suggested price in cents
+      setServicePrice(price.suggested);
     } catch (error) {
       console.error('Error fetching price:', error);
       toast({
@@ -237,7 +236,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Handle service selection
   const handleServiceSelect = (service: Service) => {
     setSelectedService(service);
     if (selectedCountry) {
@@ -245,7 +243,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Handle country selection
   const handleCountrySelect = (country: Country) => {
     setSelectedCountry(country);
     if (selectedService) {
@@ -253,7 +250,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Handle getting a phone number
   const handleGetNumber = async () => {
     if (!selectedService || !selectedCountry) {
       toast({
@@ -273,8 +269,8 @@ export default function DashboardPage() {
       return;
     }
 
-    const displayPrice = servicePrice * (1 + PROFIT_MARGIN); // Price with profit in cents
-    const displayPriceCents = displayPrice / 100; // Ensure it's in cents
+    const displayPrice = servicePrice * (1 + PROFIT_MARGIN);
+    const displayPriceCents = displayPrice / 100;
 
     if (balance <= 0) {
       toast({
@@ -301,7 +297,7 @@ export default function DashboardPage() {
         {
           service_id: selectedService.service_id,
           country_id: selectedCountry.country_id,
-          max_price: servicePrice, // Use the original suggested price for the API
+          max_price: servicePrice,
           quality_factor: 10,
         },
         {
@@ -313,7 +309,9 @@ export default function DashboardPage() {
 
       const { phone, activation_id } = response.data;
       setPhoneNumber(phone);
-      setActivationId(activation_id);
+      setActivationState({ activationId: activation_id, hasBeenCharged: false });
+      setSmsCode('');
+      setSmsText('');
       setDialogOpen(true);
     } catch (error) {
       console.error('Error getting number:', error);
@@ -327,7 +325,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Handle copying the phone number
   const handleCopyNumber = () => {
     navigator.clipboard.writeText(phoneNumber);
     toast({
@@ -336,79 +333,72 @@ export default function DashboardPage() {
     });
   };
 
-  // Handle getting SMS
   const handleGetSMS = async () => {
-    if (!user || !selectedService || !selectedCountry) return;
+    if (!user || !selectedService || !selectedCountry || !activationState) return;
 
     try {
       setLoading(true);
       await pollForSMS(
-        activationId,
+        activationState.activationId,
         async (data) => {
           if (data.sms_code && data.sms_text) {
             setSmsCode(data.sms_code);
             setSmsText(data.sms_text);
 
-            if (!servicePrice) {
-              toast({
-                title: 'Error',
-                description: 'Price not available for deduction.',
-                variant: 'destructive',
-              });
-              setLoading(false);
-              return;
+            if (!activationState.hasBeenCharged && servicePrice) {
+              const displayPrice = servicePrice * (1 + PROFIT_MARGIN);
+              const displayPriceCents = displayPrice / 100;
+
+              const paymentDoc = payments.find((payment) => payment.amount >= displayPriceCents);
+
+              if (paymentDoc) {
+                const paymentDocRef = doc(db, 'payments', paymentDoc.id);
+                await updateDoc(paymentDocRef, {
+                  amount: paymentDoc.amount - displayPriceCents,
+                });
+
+                const historyDoc = {
+                  userId: user.uid,
+                  phoneNumber,
+                  smsCode: data.sms_code,
+                  smsText: data.sms_text,
+                  serviceName: selectedService.name,
+                  countryName: selectedCountry.name,
+                  timestamp: new Date().toISOString(),
+                };
+
+                const docRef = await addDoc(collection(db, 'history'), historyDoc);
+
+                setHistory((prev) => [{
+                  ...historyDoc,
+                  id: docRef.id
+                }, ...prev]);
+
+                setPayments((prev) =>
+                  prev.map((p) =>
+                    p.id === paymentDoc.id
+                      ? { ...p, amount: p.amount - displayPriceCents }
+                      : p
+                  )
+                );
+
+                setBalance((prevBalance) => prevBalance - displayPriceCents);
+                setActivationState({ ...activationState, hasBeenCharged: true });
+                
+                toast({
+                  title: 'Success',
+                  description: `Service cost of $${(displayPrice / 100).toFixed(2)} has been deducted.`,
+                });
+              } else {
+                toast({
+                  title: 'Error',
+                  description: 'No payment record with sufficient balance found.',
+                  variant: 'destructive',
+                });
+              }
             }
-
-            const displayPrice = servicePrice * (1 + PROFIT_MARGIN); // Price with profit in cents
-            const displayPriceCents = displayPrice / 100;
-
-            const paymentDoc = payments.find((payment) => payment.amount >= displayPriceCents);
-
-            if (paymentDoc) {
-              const paymentDocRef = doc(db, 'payments', paymentDoc.id);
-              await updateDoc(paymentDocRef, {
-                amount: paymentDoc.amount - displayPriceCents,
-              });
-
-              const historyDoc = {
-                userId: user.uid,
-                phoneNumber,
-                smsCode: data.sms_code,
-                smsText: data.sms_text,
-                serviceName: selectedService.name,
-                countryName: selectedCountry.name,
-                timestamp: new Date().toISOString(),
-              };
-
-              const docRef = await addDoc(collection(db, 'history'), historyDoc);
-
-              setHistory((prev) => [{
-                ...historyDoc,
-                id: docRef.id
-              }, ...prev]);
-
-              setPayments((prev) =>
-                prev.map((p) =>
-                  p.id === paymentDoc.id
-                    ? { ...p, amount: p.amount - displayPriceCents }
-                    : p
-                )
-              );
-
-              setBalance((prevBalance) => prevBalance - displayPriceCents);
-              toast({
-                title: 'Success',
-                description: `Service cost of $${(displayPrice / 100).toFixed(2)} has been deducted.`,
-              });
-            } else {
-              toast({
-                title: 'Error',
-                description: 'No payment record with sufficient balance found.',
-                variant: 'destructive',
-              });
-            }
-            setLoading(false);
           }
+          setLoading(false);
         },
         (error) => {
           toast({
@@ -452,8 +442,8 @@ export default function DashboardPage() {
               {displayedServices.map((service) => {
                 const displayPrice =
                   selectedService?.service_id === service.service_id && servicePrice && selectedCountry
-                    ? (servicePrice * (1 + PROFIT_MARGIN) / 100).toFixed(2) // Convert cents to dollars with profit
-                    : 'N/A';
+                    ? (servicePrice * (1 + PROFIT_MARGIN) / 100).toFixed(2)
+                    : '***';
                 return (
                   <div
                     key={service.service_id}
@@ -614,18 +604,60 @@ export default function DashboardPage() {
               <Copy className="h-4 w-4" />
             </Button>
           </div>
+          
+          {smsCode && smsText && (
+            <div className="mt-4 space-y-4">
+              <div className="p-4 bg-green-50 rounded-md border border-green-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-green-800">Verification Code</h3>
+                    <p className="text-xl font-bold text-green-900">{smsCode}</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(smsCode);
+                      toast({
+                        title: 'Copied',
+                        description: 'Code copied to clipboard',
+                      });
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="p-4 bg-blue-50 rounded-md border border-blue-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-blue-800">Message Content</h3>
+                    <p className="text-base text-blue-900 break-words">{smsText}</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(smsText);
+                      toast({
+                        title: 'Copied',
+                        description: 'Message copied to clipboard',
+                      });
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <DialogFooter>
             <Button onClick={handleGetSMS} disabled={loading}>
               {loading ? 'Waiting for SMS...' : 'Get SMS'}
             </Button>
           </DialogFooter>
-          {smsCode && smsText && (
-            <div className="mt-4 p-4 bg-gray-100 rounded-md">
-              <h3 className="font-bold">SMS Received:</h3>
-              <p className="text-xl">Code: <span className="font-bold pl-2">{smsCode}</span></p>
-              <p className='text-xl'>Message: <span className='font-bold pl-2'>{smsText}</span></p>
-            </div>
-          )}
         </DialogContent>
       </Dialog>
     </div>
