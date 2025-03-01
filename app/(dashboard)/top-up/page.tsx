@@ -4,7 +4,7 @@ import { DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFlutterwave, closePaymentModal } from "flutterwave-react-v3";
 import { collection, query, where, getDocs, setDoc, doc } from "firebase/firestore";
-import { db } from "@/lib/firebase"; // Adjust path to your Firebase config
+import { db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { PaymentData } from "@/types/payment";
 import { useAuth } from '@/hooks/useAuth';
@@ -19,11 +19,11 @@ export default function TopUpPage() {
 
   // Flutterwave configuration
   const config = {
-    public_key: "FLWPUBK_TEST-0f4764dff4e84759438ba6595737afe7-X", // Replace with your actual public key
-    tx_ref: `tx_${Date.now()}`, // Unique transaction reference
+    public_key: "FLWPUBK_TEST-0f4764dff4e84759438ba6595737afe7-X",
+    tx_ref: `tx_${Date.now()}`,
     amount: selectedAmount === "other" ? parseFloat(customAmount) || 0 : parseFloat(selectedAmount || "0"),
-    currency: "USD", // Adjust currency as needed
-    payment_options: "card", // Restrict to card payments (includes Visa)
+    currency: "USD",
+    payment_options: "card",
     customer: {
       email: user?.email || "user@example.com",
       name: user?.displayName || "John Doe",
@@ -32,14 +32,12 @@ export default function TopUpPage() {
     customizations: {
       title: "Top Up",
       description: "Top up your balance",
-      logo: "https://seekicon.com/free-icon-download/next-js_1.png", // Optional
+      logo: "https://seekicon.com/free-icon-download/next-js_1.png",
     },
   };
 
-  // Initialize Flutterwave payment hook
   const handleFlutterPayment = useFlutterwave(config);
 
-  // Payment handler function
   const handlePayment = () => {
     const amount = selectedAmount === "other" ? parseFloat(customAmount) : parseFloat(selectedAmount || "0");
 
@@ -52,6 +50,23 @@ export default function TopUpPage() {
       return;
     }
 
+    // Check if payment method is crypto-related
+    if (["crypto", "usdt", "ton"].includes(selectedPayment || "")) {
+      if (!user?.email) {
+        toast({
+          title: "Error",
+          description: "Please login to proceed with crypto payment",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Redirect with both email and amount as query parameters
+      router.push(`/crypto-payment?email=${encodeURIComponent(user.email)}&amount=${amount}`);
+      return;
+    }
+
+    // Handle non-crypto payments (Visa)
     if (selectedPayment !== "visa") {
       alert("Please select Visa as the payment method");
       return;
@@ -62,19 +77,15 @@ export default function TopUpPage() {
         if (response.status === "successful") {
           try {
             const transactionId = String(response.transaction_id);
-
-            // Query the users collection to find the user by UID
             const paymentsRef = collection(db, "payments");
             const q = query(paymentsRef, where("customer.email", "==", user?.email || ''));
             const querySnapshot = await getDocs(q);
 
             if (!querySnapshot.empty) {
-              // User exists, update their balance
-              const existingPayment = querySnapshot.docs[0]; // Assuming one document per UID
+              const existingPayment = querySnapshot.docs[0];
               const currentBalance = existingPayment.data() as PaymentData;
               const newBalance = currentBalance.amount + Number(response.amount);
 
-              // Update the existing document
               await setDoc(
                 doc(db, "payments", existingPayment.id),
                 {
@@ -82,7 +93,7 @@ export default function TopUpPage() {
                   amount: newBalance,
                   updatedAt: new Date().toISOString(),
                 },
-                { merge: true } // Merge to avoid overwriting other fields
+                { merge: true }
               );
 
               toast({
@@ -90,7 +101,6 @@ export default function TopUpPage() {
                 description: `New Balance: $${newBalance.toLocaleString()}`,
               });
             } else {
-              // User doesn't exist, create a new document
               const paymentData = {
                 transactionId,
                 status: response.status,
