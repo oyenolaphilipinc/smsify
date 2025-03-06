@@ -251,7 +251,7 @@ export default function CryptoPaymentPage() {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Expires:</span>
-                                    <span className="font-medium">{new Date(paymentData.expiredAt).toLocaleString()}</span>
+                                    <span className="font-medium">{new Date(Number(paymentData.expiredAt) * 1000).toLocaleString()}</span>
                                 </div>
                                 {paymentData.QRCode && (
                                     <div className="flex justify-center mt-4">
