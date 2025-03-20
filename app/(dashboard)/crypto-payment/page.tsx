@@ -59,9 +59,9 @@ export default function CryptoPaymentPage() {
 
     // Get email and amount from URL params on mount
     useEffect(() => {
-        const emailParam = searchParams.get('email');
-        const amountParam = searchParams.get('amount');
-        
+        const emailParam = searchParams.get("email");
+        const amountParam = searchParams.get("amount");
+
         if (emailParam) setEmail(decodeURIComponent(emailParam));
         if (amountParam) setAmount(parseFloat(amountParam));
     }, [searchParams]);
@@ -83,14 +83,14 @@ export default function CryptoPaymentPage() {
                 amount,
                 payCurrency: "USDT",
                 currency,
-                callbackUrl: "https://yourdomain.com/api/payment-callback",
+                callbackUrl: "https://smsify.vercel.app/api/payment", // Replace with your actual domain
                 returnUrl: "https://smsify.vercel.app/dashboard",
                 email,
                 description,
                 orderId: `ORDER-${Date.now()}`,
                 lifeTime: 300,
                 feePaidByPayer: 0,
-                underPaidCover: 0
+                underPaidCover: 0,
             };
 
             const response = await axios.post<PaymentResponse>(
@@ -99,12 +99,22 @@ export default function CryptoPaymentPage() {
                 {
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer BU05T8-6LU7W8-LEF6GM-P79BR7`,
+                        Authorization: `Bearer BU05T8-6LU7W8-LEF6GM-P79BR7`, // Replace with your actual API key
                     },
                 }
             );
             console.log("API Response:", response.data);
             setPaymentData(response.data);
+
+            // Store trackId and email mapping in Firestore
+            await setDoc(doc(db, "payment_requests", response.data.trackId), {
+                trackId: response.data.trackId,
+                email,
+                amount,
+                createdAt: new Date().toISOString(),
+                status: "pending",
+            });
+
         } catch (error) {
             console.error("Payment initiation failed", error);
             toast({
@@ -116,7 +126,7 @@ export default function CryptoPaymentPage() {
         setLoading(false);
     };
 
-    // Handle successful payment confirmation (you might want to call this via callback)
+    // Handle successful payment confirmation (for manual testing or client-side use)
     const handlePaymentSuccess = async (trackId: string) => {
         try {
             const paymentsRef = collection(db, "payments");
@@ -152,7 +162,7 @@ export default function CryptoPaymentPage() {
                     },
                     createdAt: new Date().toISOString(),
                 };
-                await setDoc(doc(db, 'payments', trackId), paymentData);
+                await setDoc(doc(db, "payments", trackId), paymentData);
 
                 toast({
                     title: "Payment Successful",
@@ -177,10 +187,10 @@ export default function CryptoPaymentPage() {
                     <div className="space-y-6">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Amount (USD)</label>
-                            <input 
-                                type="number" 
-                                value={amount} 
-                                onChange={(e) => setAmount(Number(e.target.value))} 
+                            <input
+                                type="number"
+                                value={amount}
+                                onChange={(e) => setAmount(Number(e.target.value))}
                                 className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
                                 disabled
                             />
@@ -188,9 +198,9 @@ export default function CryptoPaymentPage() {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
-                            <select 
-                                value={currency} 
-                                onChange={(e) => setCurrency(e.target.value)} 
+                            <select
+                                value={currency}
+                                onChange={(e) => setCurrency(e.target.value)}
                                 className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             >
                                 <option value="USDT">USDT</option>
@@ -201,10 +211,10 @@ export default function CryptoPaymentPage() {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <input 
-                                type="email" 
-                                value={email} 
-                                onChange={(e) => setEmail(e.target.value)} 
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
                                 disabled
                             />
@@ -212,16 +222,16 @@ export default function CryptoPaymentPage() {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                            <input 
-                                type="text" 
-                                value={description} 
-                                onChange={(e) => setDescription(e.target.value)} 
+                            <input
+                                type="text"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
                                 className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                         </div>
 
-                        <button 
-                            onClick={handlePayment} 
+                        <button
+                            onClick={handlePayment}
                             className="w-full bg-[#0187ff] hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-xl transition-colors disabled:bg-gray-400"
                             disabled={loading}
                         >
@@ -239,11 +249,15 @@ export default function CryptoPaymentPage() {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Payment Link:</span>
-                                    <Link href={paymentData.payLink} className="font-medium">{paymentData.payLink}</Link>
+                                    <Link href={paymentData.payLink} className="font-medium">
+                                        {paymentData.payLink}
+                                    </Link>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Expires:</span>
-                                    <span className="font-medium">{new Date(Number(paymentData.expiredAt) * 1000).toLocaleString()}</span>
+                                    <span className="font-medium">
+                                        {new Date(Number(paymentData.expiredAt) * 1000).toLocaleString()}
+                                    </span>
                                 </div>
                             </div>
                         </div>
