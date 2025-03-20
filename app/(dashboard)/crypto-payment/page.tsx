@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +26,7 @@ interface PaymentRequest {
 
 interface PaymentResponse {
     result: number;
+    payLink: string;
     message: string;
     trackId: string;
     amount: number;
@@ -78,7 +80,7 @@ export default function CryptoPaymentPage() {
         setLoading(true);
         try {
             const requestBody: PaymentRequest = {
-                merchant: "BU05T8-6LU7W8-LEF6GM-P79BR7",
+                merchant: "sandbox",
                 amount,
                 payCurrency: "USDT",
                 currency,
@@ -94,7 +96,7 @@ export default function CryptoPaymentPage() {
             };
 
             const response = await axios.post<PaymentResponse>(
-                "https://api.oxapay.com/merchants/request/whitelabel",
+                "https://api.oxapay.com/merchants/request/",
                 requestBody,
                 {
                     headers: {
@@ -238,26 +240,13 @@ export default function CryptoPaymentPage() {
                                     <span className="font-medium">{paymentData.trackId}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-gray-600">Amount to Send:</span>
-                                    <span className="font-medium">{paymentData.payAmount} {paymentData.payCurrency}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">Network:</span>
-                                    <span className="font-medium">{paymentData.network}</span>
-                                </div>
-                                <div>
-                                    <span className="text-gray-600 block mb-2">Payment Address:</span>
-                                    <div className="bg-white p-3 rounded-lg break-all font-mono text-sm">{paymentData.address}</div>
+                                    <span className="text-gray-600">Payment Link:</span>
+                                    <Link href={paymentData.payLink} className="font-medium">{paymentData.payLink}</Link>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Expires:</span>
                                     <span className="font-medium">{new Date(Number(paymentData.expiredAt) * 1000).toLocaleString()}</span>
                                 </div>
-                                {paymentData.QRCode && (
-                                    <div className="flex justify-center mt-4">
-                                        <img src={paymentData.QRCode} alt="QR Code" className="w-48 h-48 rounded-lg shadow-sm" />
-                                    </div>
-                                )}
                             </div>
                         </div>
                     )}
