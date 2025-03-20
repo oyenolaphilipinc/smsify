@@ -14,7 +14,7 @@ const navigation = [
   { name: 'Receive SMS', icon: Shield, href: '/sms' },
   { name: 'Profile', icon: User, href: '/profile' },
   { name: 'Top up your balance', icon: CreditCard, href: '/top-up' },
-  { name: 'Earn money on SMS', icon: ThumbsUp, href: '/earn' },
+  { name: 'Support', icon: ThumbsUp, href: '/support' },
   { name: 'Instructions', icon: BookOpen, href: '/instructions' },
   { name: 'Feedback', icon: MessageSquare, href: '/feedback' },
 ]
