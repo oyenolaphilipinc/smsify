@@ -14,8 +14,7 @@ interface PaymentRequest {
     payCurrency: string;
     currency: string;
     callbackUrl: string;
-    success_url: string;
-    fail_url: string;
+    returnUrl: string;
     email: string;
     description: string;
     orderId: string;
@@ -85,8 +84,7 @@ export default function CryptoPaymentPage() {
                 payCurrency: "USDT",
                 currency,
                 callbackUrl: "https://yourdomain.com/api/payment-callback",
-                success_url: "https://yourdomain.com/payment-success",
-                fail_url: "https://yourdomain.com/payment-failed",
+                returnUrl: "https://smsify.vercel.app/dashboard",
                 email,
                 description,
                 orderId: `ORDER-${Date.now()}`,
