@@ -19,7 +19,7 @@ interface OxaPayCallback {
     paidAt?: string;
 }
 
-const API_SECRET_KEY = process.env.OXAPAY_API_SECRET || "your-secret-key-here";
+const API_SECRET_KEY = "sandbox";
 
 export async function POST(req: NextRequest) {
     try {
