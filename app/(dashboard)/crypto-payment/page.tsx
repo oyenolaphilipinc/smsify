@@ -249,7 +249,7 @@ export default function CryptoPaymentPage() {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Payment Link:</span>
-                                    <Link href={paymentData.payLink} className="font-medium">
+                                    <Link href={paymentData.payLink} target="_blank" className="font-medium">
                                         {paymentData.payLink}
                                     </Link>
                                 </div>
