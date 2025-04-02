@@ -47,12 +47,20 @@ export async function POST(req: NextRequest) {
       throw new Error("Email not found for this transaction");
     }
 
-    // 📂 4️⃣ Check if user already has a payment record
+    // 🔄 4️⃣ Check if this payment has already been processed
+    const paymentRequestRef = doc(db, "payment_requests", trackId);
+    const paymentRequestSnap = await getDoc(paymentRequestRef);
+    
+    if (paymentRequestSnap.exists() && paymentRequestSnap.data().status === "paid") {
+      return NextResponse.json({ info: "Payment already processed" });
+    }
+
+    // 📂 5️⃣ Check if user already has a payment record
     const paymentsRef = collection(db, "payments");
     const q = query(paymentsRef, where("customer.email", "==", resolvedEmail));
     const querySnapshot = await getDocs(q);
 
-    // 🔄 5️⃣ Use Firestore transaction to update or create record
+    // 🔄 6️⃣ Use Firestore transaction to update or create record
     await runTransaction(db, async (transaction) => {
       if (!querySnapshot.empty) {
         const existingPayment = querySnapshot.docs[0];
@@ -95,7 +103,7 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    // ✅ 6️⃣ Mark Payment Request as Completed
+    // ✅ 7️⃣ Mark Payment Request as Completed
     const requestRef = doc(db, "payment_requests", trackId);
     await updateDoc(requestRef, {
       status: "paid",
