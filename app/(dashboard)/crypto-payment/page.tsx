@@ -128,7 +128,7 @@ export default function CryptoPaymentPage() {
        payCurrency: 'USDT',
        currency,
        callbackUrl: `https://smsify.vercel.app/api/payment`,
-       returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/crypto-payment?payment=success`,
+       returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
        email,
        description,
        orderId: `ORDER-${Date.now()}`,
