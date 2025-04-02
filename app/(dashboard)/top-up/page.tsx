@@ -148,135 +148,40 @@ export default function TopUpPage() {
           {/* Step 1: Payment Method */}
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">1. Choose a payment method</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <button
-                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${
-                  selectedPayment === "visa" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"
+                className={`flex items-center justify-center gap-3 p-4 rounded-xl border transition-all hover:shadow-md ${
+                  selectedPayment === "visa" 
+                    ? "border-blue-500 bg-blue-50 shadow-sm" 
+                    : "border-gray-200 hover:border-gray-300"
                 }`}
                 onClick={() => setSelectedPayment("visa")}
               >
-                <div className="flex flex-col items-center">
-                  <div className="flex items-center">
-                    <div className="w-12 h-6 relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="w-8 h-5 bg-[#1434CB] rounded-sm mr-1"></div>
-                        <div className="w-8 h-5 bg-[#FF5F00] rounded-sm ml-1"></div>
-                      </div>
-                    </div>
-                  </div>
+                <div className="w-12 h-12 bg-white rounded-lg border flex items-center justify-center">
+                  <svg className="w-6 h-6 text-blue-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22 10H2M22 12H2M22 14H2M22 16H2M22 18H2M22 20H2M22 22H2M22 8H2M22 6H2M22 4H2M22 2H2M2 2H22V22H2V2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="font-medium">Pay with Visa</span>
+                  <span className="text-sm text-gray-500">Pay with your Credit/Debit Card</span>
                 </div>
               </button>
 
               <button
-                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${
-                  selectedPayment === "wechat" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"
-                }`}
-                onClick={() => setSelectedPayment("wechat")}
-              >
-                <div className="flex items-center">
-                  <div className="w-6 h-6 bg-[#07C160] rounded-full mr-1"></div>
-                  <span className="text-[#07C160] font-medium">WeChat</span>
-                </div>
-              </button>
-
-              <button
-                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${
-                  selectedPayment === "alipay" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"
-                }`}
-                onClick={() => setSelectedPayment("alipay")}
-              >
-                <div className="flex items-center">
-                  <span className="text-[#00A0E9] font-bold text-lg">Alipay</span>
-                </div>
-              </button>
-
-              <button
-                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${
-                  selectedPayment === "crypto" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"
-                }`}
-                onClick={() => setSelectedPayment("crypto")}
-              >
-                <div className="flex items-center space-x-1">
-                  <div className="w-5 h-5 bg-[#F7931A] rounded-full flex items-center justify-center text-white text-xs font-bold">
-                    ₿
-                  </div>
-                  <div className="w-5 h-5 bg-[#627EEA] rounded-full"></div>
-                  <div className="w-5 h-5 bg-[#BFBBBB] rounded-full"></div>
-                  <div className="w-5 h-5 bg-[#26A17B] rounded-full"></div>
-                </div>
-              </button>
-
-              <button
-                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${
-                  selectedPayment === "usdt" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"
+                className={`flex items-center justify-center gap-3 p-4 rounded-xl border transition-all hover:shadow-md ${
+                  selectedPayment === "usdt" 
+                    ? "border-blue-500 bg-blue-50 shadow-sm" 
+                    : "border-gray-200 hover:border-gray-300"
                 }`}
                 onClick={() => setSelectedPayment("usdt")}
               >
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-[#26A17B] rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold text-xs">$</span>
+                <div className="w-12 h-12 bg-[#26A17B] rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">$</span>
                   </div>
-                  <div className="text-xs mt-1">
-                    <span className="font-bold">USDT</span>
-                    <span className="text-[10px] block text-center">TRC20</span>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${
-                  selectedPayment === "ton" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"
-                }`}
-                onClick={() => setSelectedPayment("ton")}
-              >
-                <div className="flex flex-col items-center">
-                  <div className="text-[#0088CC] font-bold">TON</div>
-                  <div className="w-8 h-8 bg-[#0088CC] rounded-full flex items-center justify-center">
-                    <span className="text-white">◊</span>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${
-                  selectedPayment === "payeer" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"
-                }`}
-                onClick={() => setSelectedPayment("payeer")}
-              >
-                <div className="flex items-center">
-                  <span className="font-bold text-black">
-                    PAY<span className="text-[#00AEEF]">EER</span>
-                  </span>
-                  <span className="text-xs align-top">®</span>
-                </div>
-              </button>
-
-              <button
-                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${
-                  selectedPayment === "paytm" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"
-                }`}
-                onClick={() => setSelectedPayment("paytm")}
-              >
-                <div className="flex flex-col items-center space-y-1">
-                  <div className="flex items-center space-x-1">
-                    <div className="w-5 h-5 bg-[#5F259F] rounded-full"></div>
-                    <div className="w-5 h-5 bg-[#6739B6] rounded-full"></div>
-                    <div className="w-5 h-5 bg-[#4285F4] rounded-full"></div>
-                  </div>
-                  <div className="text-xs">UPI</div>
-                </div>
-              </button>
-
-              <button
-                className={`border rounded-xl p-3 h-[70px] flex items-center justify-center transition-all ${
-                  selectedPayment === "promptpay" ? "border-blue-500 shadow-sm" : "border-gray-200 hover:border-gray-300"
-                }`}
-                onClick={() => setSelectedPayment("promptpay")}
-              >
-                <div className="flex items-center">
-                  <div className="bg-[#1A458B] text-white text-xs px-2 py-1 rounded">
-                    <span className="font-bold">Prompt</span>Pay
-                  </div>
+                <div className="flex flex-col items-start">
+                  <span className="font-medium">Pay with Crypto</span>
+                  <span className="text-sm text-gray-500">Pay with any network of your choice</span>
                 </div>
               </button>
             </div>
@@ -288,26 +193,32 @@ export default function TopUpPage() {
               2. Specify top up amount
               <DollarSign className="w-5 h-5 ml-1 text-blue-500" />
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <button
-                className={`border rounded-xl py-3 px-4 transition-all ${
-                  selectedAmount === "10" ? "bg-blue-50 border-blue-500" : "border-gray-200 bg-blue-50 hover:border-gray-300"
+                className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all hover:shadow-md ${
+                  selectedAmount === "10" 
+                    ? "border-blue-500 bg-blue-50 shadow-sm" 
+                    : "border-gray-200 hover:border-gray-300"
                 }`}
                 onClick={() => setSelectedAmount("10")}
               >
                 10$
               </button>
               <button
-                className={`border rounded-xl py-3 px-4 transition-all ${
-                  selectedAmount === "50" ? "bg-blue-50 border-blue-500" : "border-gray-200 bg-blue-50 hover:border-gray-300"
+                className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all hover:shadow-md ${
+                  selectedAmount === "50" 
+                    ? "border-blue-500 bg-blue-50 shadow-sm" 
+                    : "border-gray-200 hover:border-gray-300"
                 }`}
                 onClick={() => setSelectedAmount("50")}
               >
                 50$
               </button>
               <button
-                className={`border rounded-xl py-3 px-4 transition-all ${
-                  selectedAmount === "100" ? "bg-blue-50 border-blue-500" : "border-gray-200 bg-blue-50 hover:border-gray-300"
+                className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all hover:shadow-md ${
+                  selectedAmount === "100" 
+                    ? "border-blue-500 bg-blue-50 shadow-sm" 
+                    : "border-gray-200 hover:border-gray-300"
                 }`}
                 onClick={() => setSelectedAmount("100")}
               >

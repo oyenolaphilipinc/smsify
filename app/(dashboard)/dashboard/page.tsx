@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { PaymentData } from '@/types/payment';
+import { Loader2 } from 'lucide-react';
 import { collection, query, where, getDocs, doc, updateDoc, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,6 +27,7 @@ interface Service {
   service_id: string;
   name: string;
   icon: string;
+  icon_url?: string;
 }
 
 interface Country {
@@ -54,12 +56,72 @@ interface HistoryItem {
   serviceName: string;
   countryName: string;
   timestamp: string;
+  activationId?: string;
 }
 
 interface ActivationState {
   activationId: string;
   hasBeenCharged: boolean;
 }
+
+const getServiceIcon = (serviceName: string): string => {
+  const serviceNameLower = serviceName.toLowerCase();
+  
+  // Common service mappings
+  const iconMap: { [key: string]: string } = {
+    'whatsapp': 'mdi:whatsapp',
+    'telegram': 'mdi:telegram',
+    'facebook': 'mdi:facebook',
+    'instagram': 'mdi:instagram',
+    'google': 'mdi:google',
+    'twitter': 'mdi:twitter',
+    'tiktok': 'mdi:tiktok',
+    'snapchat': 'mdi:snapchat',
+    'viber': 'mdi:viber',
+    'line': 'mdi:line',
+    'wechat': 'mdi:wechat',
+    'kakao': 'mdi:kakao',
+    'discord': 'mdi:discord',
+    'skype': 'mdi:skype',
+    'youtube': 'mdi:youtube',
+    'linkedin': 'mdi:linkedin',
+    'pinterest': 'mdi:pinterest',
+    'reddit': 'mdi:reddit',
+    'twitch': 'mdi:twitch',
+    'spotify': 'mdi:spotify',
+    'netflix': 'mdi:netflix',
+    'amazon': 'mdi:amazon',
+    'apple': 'mdi:apple',
+    'microsoft': 'mdi:microsoft',
+    'uber': 'mdi:uber',
+    'airbnb': 'mdi:airbnb',
+    'paypal': 'mdi:paypal',
+    'stripe': 'mdi:stripe',
+    'visa': 'mdi:credit-card',
+    'mastercard': 'mdi:credit-card-multiple',
+    'gmail': 'mdi:gmail',
+    'outlook': 'mdi:outlook',
+    'yahoo': 'mdi:yahoo',
+    'hotmail': 'mdi:email',
+    'icloud': 'mdi:apple-icloud',
+    'dropbox': 'mdi:dropbox',
+    'onedrive': 'mdi:onedrive',
+    'google-drive': 'mdi:google-drive',
+    'alibaba': 'mdi:shopping',
+    'alipay': 'mdi:wallet',
+    'default': 'mdi:application'
+  };
+
+  // Try to find a matching icon
+  for (const [key, icon] of Object.entries(iconMap)) {
+    if (serviceNameLower.includes(key)) {
+      return icon;
+    }
+  }
+
+  // Return default icon if no match found
+  return iconMap.default;
+};
 
 export default function DashboardPage() {
   const [payments, setPayments] = useState<PaymentData[]>([]);
@@ -83,6 +145,9 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const [replyDialogOpen, setReplyDialogOpen] = useState(false);
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<HistoryItem | null>(null);
+  const [retryLoading, setRetryLoading] = useState(false);
 
   const PROFIT_MARGIN = 0.20;
 
@@ -91,7 +156,11 @@ export default function DashboardPage() {
       try {
         setLoading(true);
         const data = await getServices();
-        setServices(data);
+        const enrichedServices = data.map((service: Service) => ({
+          ...service,
+          icon_url: `https://api.iconify.design/${getServiceIcon(service.name)}.svg`,
+        }));
+        setServices(enrichedServices);
       } catch (error) {
         toast({
           title: 'Error',
@@ -365,6 +434,7 @@ export default function DashboardPage() {
                   serviceName: selectedService.name,
                   countryName: selectedCountry.name,
                   timestamp: new Date().toISOString(),
+                  activationId: activationState.activationId
                 };
 
                 const docRef = await addDoc(collection(db, 'history'), historyDoc);
@@ -419,6 +489,85 @@ export default function DashboardPage() {
     }
   };
 
+  const handleReply = (item: HistoryItem) => {
+    setSelectedHistoryItem({
+      ...item,
+      activationId: item.activationId
+    });
+    setPhoneNumber(item.phoneNumber);
+    setSmsCode(item.smsCode);
+    setSmsText(item.smsText);
+    setReplyDialogOpen(true);
+  };
+
+  const handleRetrySMS = async () => {
+    console.log('Selected history item:', selectedHistoryItem);
+    console.log('Activation ID:', selectedHistoryItem?.activationId);
+    
+    if (!selectedHistoryItem?.activationId) {
+      toast({
+        title: 'Error',
+        description: 'Cannot retry SMS: Activation ID not found',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setRetryLoading(true);
+      await pollForSMS(
+        selectedHistoryItem.activationId,
+        async (data) => {
+          if (data.sms_code && data.sms_text) {
+            setSmsCode(data.sms_code);
+            setSmsText(data.sms_text);
+            
+            // Update the history item with new SMS data
+            const historyRef = doc(db, 'history', selectedHistoryItem.id);
+            await updateDoc(historyRef, {
+              smsCode: data.sms_code,
+              smsText: data.sms_text,
+              timestamp: new Date().toISOString(),
+            });
+
+            // Update local state with proper type checking
+            setHistory(prev => prev.map(item => 
+              item.id === selectedHistoryItem.id 
+                ? {
+                    ...item,
+                    smsCode: data.sms_code || item.smsCode,
+                    smsText: data.sms_text || item.smsText,
+                    timestamp: new Date().toISOString()
+                  }
+                : item
+            ));
+
+            toast({
+              title: 'Success',
+              description: 'New SMS received successfully',
+            });
+          }
+          setRetryLoading(false);
+        },
+        (error) => {
+          toast({
+            title: 'Error',
+            description: error.message,
+            variant: 'destructive',
+          });
+          setRetryLoading(false);
+        }
+      );
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to get new SMS. Please try again.',
+        variant: 'destructive',
+      });
+      setRetryLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       <h1 className="text-2xl font-bold ml-4">New SMS</h1>
@@ -443,7 +592,7 @@ export default function DashboardPage() {
                 const displayPrice =
                   selectedService?.service_id === service.service_id && servicePrice && selectedCountry
                     ? (servicePrice * (1 + PROFIT_MARGIN) / 100).toFixed(2)
-                    : '***';
+                    : '';
                 return (
                   <div
                     key={service.service_id}
@@ -455,7 +604,22 @@ export default function DashboardPage() {
                     onClick={() => handleServiceSelect(service)}
                   >
                     <div className="flex items-center gap-3">
-                      <Image src={service.icon || '/placeholder.png'} alt={service.name} width={30} height={30} />
+                      {service.icon_url ? (
+                        <Image 
+                          src={service.icon_url} 
+                          alt={service.name} 
+                          width={30} 
+                          height={30}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = '/icons/service-default.svg';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-[30px] h-[30px] bg-gray-200 rounded-lg flex items-center justify-center">
+                          <span className="text-gray-400 text-sm">{service.name[0]}</span>
+                        </div>
+                      )}
                       <span>{service.name}</span>
                     </div>
                     <span className="text-gray-500">${displayPrice}</span>
@@ -655,7 +819,91 @@ export default function DashboardPage() {
 
           <DialogFooter>
             <Button onClick={handleGetSMS} disabled={loading}>
-              {loading ? 'Waiting for SMS...' : 'Get SMS'}
+            {loading ? (
+               <>
+                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                 Processing...
+               </>
+             ) : (
+               'Get SMS'
+             )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={replyDialogOpen} onOpenChange={setReplyDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reply to SMS</DialogTitle>
+            <DialogDescription>
+              Phone number for {selectedHistoryItem?.serviceName} in {selectedHistoryItem?.countryName}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex items-center justify-between p-4 bg-gray-100 rounded-md">
+            <span className="text-xl font-bold">{`+${phoneNumber}`}</span>
+            <Button variant="outline" size="icon" onClick={handleCopyNumber}>
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="mt-4 space-y-4">
+            <div className="p-4 bg-green-50 rounded-md border border-green-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-green-800">Verification Code</h3>
+                  <p className="text-xl font-bold text-green-900">{smsCode}</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(smsCode);
+                    toast({
+                      title: 'Copied',
+                      description: 'Code copied to clipboard',
+                    });
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="p-4 bg-blue-50 rounded-md border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-blue-800">Message Content</h3>
+                  <p className="text-base text-blue-900 break-words">{smsText}</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(smsText);
+                    toast({
+                      title: 'Copied',
+                      description: 'Message copied to clipboard',
+                    });
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-2">
+            <Button 
+              onClick={handleRetrySMS} 
+              disabled={retryLoading}
+              variant="outline"
+            >
+              {retryLoading ? 'Getting new SMS...' : 'Retry SMS'}
+            </Button>
+            <Button onClick={() => setReplyDialogOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
