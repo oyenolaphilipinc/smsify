@@ -1,5 +1,28 @@
-import { MessageSquare } from "lucide-react";
+import { Globe } from "lucide-react";
 import Link from "next/link";
+
+// Custom Cone Logo Component
+const ConeLogo = () => (
+  <svg
+    className="h-8 w-8 text-primary"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M12 2L2 22H22L12 2Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M12 2L7 12H17L12 2Z"
+      fill="currentColor"
+      fillOpacity="0.2"
+    />
+  </svg>
+);
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -10,12 +33,11 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-2">
             <Link href="/" className="flex items-center space-x-2 mb-4">
-              <MessageSquare className="h-8 w-8 text-primary" />
-              <span className="font-bold text-xl text-white">SMSify</span>
+              <ConeLogo />
+              <span className="font-bold text-xl text-white">SMSCONE</span>
             </Link>
             <p className="text-gray-400 mb-4 max-w-md">
-              Enterprise-grade SMS platform for businesses. Send bulk messages,
-              automate communications, and engage customers effectively.
+              The most reliable platform for receiving SMS messages with virtual numbers. Get instant access to virtual numbers from over 150 countries worldwide.
             </p>
           </div>
 
@@ -74,7 +96,7 @@ export function Footer() {
 
         <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-sm text-gray-400">
-            © {currentYear} SMSify. All rights reserved.
+            © {currentYear} SMSCone. All rights reserved.
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <Link href="/privacy" className="text-sm text-gray-400 hover:text-white transition-colors">

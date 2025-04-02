@@ -2,9 +2,32 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, MessageSquare } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from '@/hooks/useAuth';
+
+// Custom Cone Logo Component
+const ConeLogo = () => (
+  <svg
+    className="h-8 w-8 text-primary"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M12 2L2 22H22L12 2Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M12 2L7 12H17L12 2Z"
+      fill="currentColor"
+      fillOpacity="0.2"
+    />
+  </svg>
+);
 
 export function Navbar() {
   const { user, loading: authLoading } = useAuth();
@@ -38,9 +61,9 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <MessageSquare className="h-8 w-8 text-primary" />
-              <span className="font-bold text-xl">SMSify</span>
+            <Link href="/" className="flex items-center space-x-1">
+              <ConeLogo />
+              <span className="font-bold text-xl mt-2">SMSCONE</span>
             </Link>
           </div>
 
@@ -100,7 +123,7 @@ export function Navbar() {
               <Link
                 href={user ? "/dashboard" : "/signup"}
                 onClick={() => setIsOpen(false)}
-                className="bg-primary text-white block px-3 py-2 rounded-md text-base font-medium hover:bg-primary/90"
+                className="bg-primary text-white block px-3 py-2 rounded-md text-base text-center font-medium hover:bg-primary/90"
               >
                 {user ? "Dashboard" : "Get Started"}
               </Link>

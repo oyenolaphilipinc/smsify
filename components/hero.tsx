@@ -21,9 +21,9 @@ export function Hero() {
             transition={{ duration: 0.5 }}
           >
             <h1 className="text-4xl sm:text-6xl font-bold text-gray-900 mb-6">
-              Enterprise SMS Solutions
+              Receive SMS Online with a
               <br />
-              <span className="text-primary">Made Simple</span>
+              <span className="text-primary">Virtual Phone Number</span>
             </h1>
           </motion.div>
 
@@ -33,8 +33,8 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto"
           >
-            Reach your customers instantly with our powerful SMS platform.
-            Scale your communications effortlessly.
+            Register on social networks, marketplaces, exchanges and online services
+            without spam and disclosure of personal data.
           </motion.p>
 
           <motion.div

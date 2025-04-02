@@ -2,34 +2,34 @@
 
 import { motion } from 'framer-motion';
 import {
-  MessageSquare,
-  Settings,
-  Send,
-  BarChart,
+  Globe,
+  Smartphone,
+  Shield,
+  Zap,
   ArrowRight,
 } from 'lucide-react';
 
 export function HowItWorks() {
   const steps = [
     {
-      icon: <MessageSquare className="h-12 w-12 text-primary" />,
-      title: 'Get Remote Number',
-      description: 'Get any number from around the world',
+      icon: <Globe className="h-12 w-12 text-primary" />,
+      title: 'Choose Your Number',
+      description: 'Select a virtual number from any country worldwide',
     },
     {
-      icon: <Settings className="h-12 w-12 text-primary" />,
-      title: 'Configure Settings',
-      description: 'Set up targeting, scheduling, and personalization',
+      icon: <Smartphone className="h-12 w-12 text-primary" />,
+      title: 'Get Your Number',
+      description: 'Receive your dedicated virtual number instantly',
     },
     {
-      icon: <Send className="h-12 w-12 text-primary" />,
-      title: 'Receive Messages',
-      description: 'Deliver your messages to thousands instantly',
+      icon: <Shield className="h-12 w-12 text-primary" />,
+      title: 'Receive SMS',
+      description: 'Get SMS messages from any service or platform',
     },
     {
-      icon: <BarChart className="h-12 w-12 text-primary" />,
-      title: 'Track Results',
-      description: 'Monitor delivery rates and engagement metrics',
+      icon: <Zap className="h-12 w-12 text-primary" />,
+      title: 'View Messages',
+      description: 'Access your messages instantly in your dashboard',
     },
   ];
 
@@ -54,7 +54,7 @@ export function HowItWorks() {
   };
 
   return (
-    <section id="how-it-works" className="py-24 bg-white">
+    <section id="how-it-works" className="py-24 bg-gradient-to-b from-white to-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -64,10 +64,10 @@ export function HowItWorks() {
           className="text-center mb-16"
         >
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            How It Works
+            How SMSCone Works
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Send SMS messages in four simple steps
+            Get your virtual number and receive SMS messages in four simple steps
           </p>
         </motion.div>
 
@@ -82,12 +82,12 @@ export function HowItWorks() {
             <motion.div
               key={index}
               variants={itemVariants}
-              className="relative p-6 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow"
+              className="relative p-8 bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100"
             >
               <div className="flex flex-col items-center text-center">
-                <div className="mb-4">{step.icon}</div>
-                <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-                <p className="text-gray-600">{step.description}</p>
+                <div className="mb-6 p-4 bg-primary/10 rounded-full">{step.icon}</div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">{step.title}</h3>
+                <p className="text-gray-600 leading-relaxed">{step.description}</p>
               </div>
               {index < steps.length - 1 && (
                 <div className="hidden lg:block absolute top-1/2 -right-4 transform -translate-y-1/2">
