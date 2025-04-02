@@ -127,7 +127,7 @@ export default function CryptoPaymentPage() {
        amount,
        payCurrency: 'USDT',
        currency,
-       callbackUrl: `https://722d-197-210-226-68.ngrok-free.app/api/payment`,
+       callbackUrl: `https://smsify.vercel.app/api/payment`,
        returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/crypto-payment?payment=success`,
        email,
        description,
